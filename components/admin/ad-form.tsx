@@ -1,0 +1,17 @@
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { adAction } from '@/app/admin/operations-actions';
+import { ImageUpload } from '@/components/editorial/image-upload';
+import { localDateTime } from '@/lib/admin/policy.mjs';
+import type { Campaign,AdSlot } from '@/server/services/ads';
+export function AdForm({record,slots,timezone}:{record?:Campaign;slots:AdSlot[];timezone:string}){
+ const [image,setImage]=useState(record?.image_url||''),[mobile,setMobile]=useState(record?.mobile_image_url||''),[error,setError]=useState(''),[busy,setBusy]=useState(false);const router=useRouter();
+ return <form className="phase-form" onSubmit={async event=>{event.preventDefault();const form=new FormData(event.currentTarget);setBusy(true);setError('');const r=await adAction(form);setBusy(false);if(r.error)setError(r.error);else{router.push('/admin/publicidade');router.refresh();}}}>
+ {record&&<input type="hidden" name="id" value={record.id}/>}<label>Nome interno<input name="name" defaultValue={record?.name} maxLength={120} required/></label><label>Anunciante<input name="advertiser_name" defaultValue={record?.advertiser_name} maxLength={160} required/></label>
+ <label>Posição<select name="slot_id" aria-label="Posição" defaultValue={record?.slot_id} required>{slots.map(s=><option key={s.id} value={s.id}>{s.name}{!s.active?' (inativa)':''}</option>)}</select></label>
+ <ImageUpload label="Imagem principal" value={image} onChange={setImage} endpoint="/api/ads/upload"/><input type="hidden" name="image_url" value={image}/><ImageUpload label="Imagem mobile (opcional)" value={mobile} onChange={setMobile} endpoint="/api/ads/upload"/><input type="hidden" name="mobile_image_url" value={mobile}/>
+ <label>Texto alternativo<input name="alt_text" maxLength={300} defaultValue={record?.alt_text} required/></label><label>URL de destino<input name="destination_url" type="url" maxLength={2048} defaultValue={record?.destination_url} required/></label>
+ <p>Datas e horas em {timezone}.</p><label>Início<input name="start_at" type="datetime-local" defaultValue={localDateTime(record?.start_at,timezone)} required/></label><label>Término (opcional)<input name="end_at" type="datetime-local" defaultValue={localDateTime(record?.end_at,timezone)}/></label><label>Prioridade<input name="priority" type="number" min="0" max="1000" defaultValue={record?.priority??0} required/></label><label className="check"><input name="active" type="checkbox" defaultChecked={record?.active??true}/>Ativa</label><p role="alert">{error}</p><button className="button" disabled={busy||!image}>Salvar campanha</button></form>;
+}
+export function SlotForm({slot}:{slot:AdSlot}){const [message,setMessage]=useState('');return <details><summary>{slot.name} · {slot.active?'Ativa':'Inativa'}</summary><form className="phase-form" onSubmit={async event=>{event.preventDefault();const f=new FormData(event.currentTarget);const r=await adAction(f,true);setMessage(r.error||'Posição salva.');}}><input name="id" type="hidden" value={slot.id}/><p>Código: {slot.code}</p><label>Nome da posição<input name="name" defaultValue={slot.name} maxLength={120} required/></label><label>Descrição<textarea name="description" defaultValue={slot.description} maxLength={600}/></label><label className="check"><input name="active" type="checkbox" defaultChecked={slot.active}/>Ativo</label><p role="status">{message}</p><button className="button">Salvar posição</button></form></details>;}

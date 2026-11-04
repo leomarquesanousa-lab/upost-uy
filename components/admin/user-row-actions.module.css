@@ -1,0 +1,4 @@
+.actions { min-width: 150px; }
+.menu { display: grid; gap: 12px; padding-top: 12px; }
+.menu button { cursor: pointer; background: none; border: 0; padding: 0; text-align: left; color: inherit; font: inherit; text-decoration: underline; }
+.menu button:disabled { opacity: .5; cursor: wait; }

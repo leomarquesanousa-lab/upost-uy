@@ -1,0 +1,2 @@
+import { CatalogAdmin } from '@/components/programming/admin-pages';
+export default async function Page({params}:{params:Promise<{id:string}>}){return <CatalogAdmin kind="presenters" id={(await params).id}/>;}

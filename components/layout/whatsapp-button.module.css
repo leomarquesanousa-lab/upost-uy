@@ -1,0 +1,31 @@
+.button {
+  position: fixed;
+  left: max(24px, env(safe-area-inset-left));
+  bottom: calc(var(--player-height, 88px) + 24px + env(safe-area-inset-bottom));
+  z-index: 24;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 50%;
+  background: #128c57;
+  color: #fff;
+  box-shadow: 0 5px 18px rgba(6,36,75,.22);
+}
+.button svg { width: 28px; height: 28px; }
+.button:hover { background: #087344; }
+.button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 4px; }
+:global(body:has(.cookie-layer)) .button,
+:global(body:has([aria-modal="true"])) .button { visibility: hidden; pointer-events: none; }
+@media (max-width: 760px) {
+  .button {
+    left: auto;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(var(--player-height, 104px) + 16px + env(safe-area-inset-bottom));
+    width: 48px;
+    height: 48px;
+  }
+  .button svg { width: 25px; height: 25px; }
+  :global(body:has(.main-nav.is-open)) .button { visibility: hidden; pointer-events: none; }
+}
