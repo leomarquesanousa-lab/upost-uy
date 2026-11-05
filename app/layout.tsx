@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
-import { RadioProvider } from '@/components/radio/radio-player';
-import { getSettings } from '@/server/services/settings';
+
 import './globals.css';
 import './visual-refresh.css';
-import { currentProgramming } from '@/server/services/programming';
+import './upost.css';
 import { integrationSettings } from '@/server/services/integrations';
-import { GoogleAdSense,GoogleAnalytics } from '@/components/integrations/google-scripts';
+import {ConsentedScripts} from '@/components/integrations/consented-scripts';
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Biosfera Rádio TV Web', description: 'Biosfera: rádio ao vivo, informação e conexão.' };
+export const metadata: Metadata = { icons: {icon:'/brand/favicon.svg',apple:'/brand/favicon.svg'}, title: 'UPOST.uy | Noticias de Uruguay y el mundo', description: 'Periodismo independiente, noticias verificadas y voces propias. La verdad nos une.' };
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [settings,programming,integrations] = await Promise.all([getSettings(),currentProgramming(),integrationSettings()]);
-  return <html lang="pt-BR"><body><RadioProvider streamUrl={settings.radioStreamUrl} initialProgramming={programming}>{children}</RadioProvider>{integrations.GA4_ENABLED&&integrations.GA4_MEASUREMENT_ID&&<GoogleAnalytics measurementId={integrations.GA4_MEASUREMENT_ID}/>} {integrations.ADSENSE_ENABLED&&integrations.ADSENSE_CLIENT_ID&&<GoogleAdSense clientId={integrations.ADSENSE_CLIENT_ID}/>}</body></html>;
+  const integrations = await integrationSettings();
+  return <html lang="es-UY"><body>{children}<ConsentedScripts measurementId={integrations.GA4_ENABLED?integrations.GA4_MEASUREMENT_ID||"":""} clientId={integrations.ADSENSE_ENABLED?integrations.ADSENSE_CLIENT_ID||"":""}/></body></html>;
 }

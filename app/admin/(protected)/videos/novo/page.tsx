@@ -9,7 +9,7 @@ export default async function Page() {
   return (
     <>
       <Link href="/admin/videos">
-        ← Vídeos
+        ← Videos
       </Link>
 
       <h1 className="form-title">

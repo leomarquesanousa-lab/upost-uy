@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Brand } from '@/components/brand';
 import { requireUser } from '@/lib/auth/session';
 import { logout } from '../actions';
+import styles from './admin-layout.module.css';
 
 export default async function AdminLayout({
   children,
@@ -19,20 +20,20 @@ export default async function AdminLayout({
           href="/"
         >
           <Brand light />
-          <small>ADMINISTRAÇÃO</small>
+          <small>ADMINISTRACIÓN</small>
         </Link>
 
-        <nav aria-label="Painel">
+        <nav aria-label="Panel">
           <Link href="/admin">
-            Dashboard
+            Panel
           </Link>
 
           <Link href="/admin/noticias">
-            Notícias
+            Noticias
           </Link>
 
           <Link href="/admin/categorias">
-            Categorias
+            Categorías
           </Link>
 
           <Link href="/admin/autores">
@@ -40,37 +41,28 @@ export default async function AdminLayout({
           </Link>
 
           <Link href="/admin/videos">
-            Vídeos
+            Videos
           </Link>
 
-          <Link href="/admin/pedidos-musicais">
-            Pedidos musicais
-          </Link>
 
-          <Link href="/admin/programacao">
-            Programação
-          </Link>
 
-          <Link href="/admin/programas">
-            Programas
-          </Link>
 
-          <Link href="/admin/apresentadores">
-            Apresentadores
-          </Link>
 
-          <Link href="/admin/chat">
-            Chat
-          </Link>
+
+
+
+
+
 
           {user.role !== 'EDITOR' && (
             <>
-              <Link href="/admin/publicidade">
-                Publicidade
+              <Link href="/admin/fuentes-automaticas" className={styles.sourcesLink}>Fuentes automáticas</Link>
+              <Link href="/admin/red">Medios asociados y red</Link><Link href="/admin/publicidade">
+                Publicidad
               </Link>
 
               <Link href="/admin/usuarios">
-                Usuários
+                Usuarios
               </Link>
             </>
           )}
@@ -78,23 +70,23 @@ export default async function AdminLayout({
           {user.role === 'OWNER' && (
             <>
               <Link href="/admin/integracoes">
-                Integrações
+                Integraciones
               </Link>
 
               <Link href="/admin/configuracoes">
-                Configurações
+                Configuración
               </Link>
             </>
           )}
 
           <Link href="/admin/minha-conta">
-            Minha Conta
+            Mi cuenta
           </Link>
         </nav>
 
         <form action={logout}>
           <button className="button secondary">
-            Sair da conta
+            Cerrar sesión
           </button>
         </form>
       </aside>

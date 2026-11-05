@@ -5,6 +5,7 @@ import './env.mjs';
 import { Pool } from 'pg';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 import { registerHooks } from 'node:module';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
@@ -13,18 +14,19 @@ import { secureConnectionString } from '../lib/db/connection-string.mjs';
 registerHooks({ resolve(specifier, context, next) {
   return specifier === 'server-only' ? { url: 'data:text/javascript,export {}', shortCircuit: true } : next(specifier, context);
 } });
-const { checkR2Health, requiredR2Storage, statR2 } = await import('../server/services/r2-storage.mjs');
+const { checkR2Health, requiredR2Storage, statR2, readR2Object } = await import('../server/services/r2-storage.mjs');
 
 const args = process.argv.slice(2);
 const paths = [];
-let health = false, copyLocal = false;
+let health = false, copyLocal = false, dryRun = false;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--health') health = true;
+  else if (args[i] === '--dry-run') dryRun = true;
   else if (args[i] === '--copy-local') copyLocal = true;
   else if (args[i] === '--path') paths.push(args[++i]);
   else throw new Error('Use --health e/ou --path /media/<UUID>.webp; --copy-local é opcional.');
 }
-if ((!health && !paths.length) || paths.length > 20 || paths.some(value => !/^\/media\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/.test(value || ''))) {
+if ((dryRun && (copyLocal || health)) || (!health && !paths.length) || paths.length > 20 || paths.some(value => !/^\/media\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.webp$/.test(value || ''))) {
   throw new Error('Informe até 20 caminhos de imagens explícitos e válidos.');
 }
 let pool;
@@ -34,6 +36,17 @@ try {
   for (const url of new Set(paths)) {
     const record = (await pool.query('SELECT id,size,mime_type FROM media_assets WHERE path=$1', [url])).rows[0];
     const key = url.slice(1);
+    if (dryRun) {
+      let bytes;
+      for (const directory of [process.env.UPLOAD_DIR || 'storage/uploads', 'public/media']) {
+        try { bytes = await readFile(path.resolve(directory, path.basename(url))); break; }
+        catch (error) { if (error.code !== 'ENOENT') throw error; }
+      }
+      const metadata = bytes ? await sharp(bytes, { limitInputPixels: 20000000 }).metadata() : null;
+      const compatible = Boolean(record && bytes && bytes.length === record.size && metadata.format === 'webp' && (metadata.pages || 1) === 1);
+      console.log(JSON.stringify({ path: url, dryRun: true, registered: Boolean(record), local: Boolean(bytes), compatible, size: bytes?.length ?? null, sha256: bytes ? createHash('sha256').update(bytes).digest('hex') : null }));
+      continue;
+    }
     let object = await statR2(key), copied = false;
     if (copyLocal && record && !object) {
       let bytes;
@@ -49,6 +62,8 @@ try {
         await storage.client.send(new PutObjectCommand({ Bucket: storage.bucket, Key: key, Body: bytes, ContentType: 'image/webp', CacheControl: 'public, max-age=31536000, immutable', IfNoneMatch: '*' }));
         object = await statR2(key);
         if (!object || object.size !== bytes.length || object.mimeType !== 'image/webp') throw new Error('Cópia não confirmada: ' + url);
+        const remote = await readR2Object(key);
+        if (!remote || !remote.equals(bytes)) throw new Error('Conteúdo da cópia não confirmado: ' + url);
         copied = true;
       }
     }

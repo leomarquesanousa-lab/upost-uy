@@ -1,0 +1,4 @@
+/* Keep the new module discoverable in the existing horizontal mobile menu. */
+@media (max-width: 760px) {
+  .sourcesLink { order: -1; }
+}

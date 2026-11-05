@@ -6,7 +6,7 @@ export function text(form: FormData, key: string, max: number, required = false)
   const value = form.get(key);
   if (value !== null && typeof value !== 'string') throw new EditorialError('Campo inválido.');
   const result = (value || '').trim();
-  if (result.length > max || (required && !result)) throw new EditorialError(`Revise o campo ${key}: ${required ? 'obrigatório, ' : ''}máximo de ${max} caracteres.`);
+  if (result.length > max || (required && !result)) throw new EditorialError(`Revisá el campo ${key}: ${required ? 'obligatorio, ' : ''}máximo de ${max} caracteres.`);
   return result;
 }
 export function uuid(value: string) {
@@ -15,46 +15,46 @@ export function uuid(value: string) {
 }
 export function slug(form: FormData, title: string) {
   const value = text(form, 'slug', 180) || slugify(title);
-  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(value)) throw new EditorialError('Slug deve conter letras minúsculas, números e hífens.');
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(value)) throw new EditorialError('El slug debe contener letras minúsculas, números y guiones.');
   return value;
 }
 export function mediaPath(value: string) {
-  if (value && !mediaPattern.test(value)) throw new EditorialError('Selecione uma imagem enviada pelo portal.');
+  if (value && !mediaPattern.test(value)) throw new EditorialError('Seleccioná una imagen subida al portal.');
   return value;
 }
 function date(value: string) {
   if (!value) return null;
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(value) || !Number.isFinite(Date.parse(value))) throw new EditorialError('Data inválida.');
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(value) || !Number.isFinite(Date.parse(value))) throw new EditorialError('Fecha inválida.');
   const parsed = new Date(value);
-  if (parsed.getUTCFullYear() < 2000 || parsed.getUTCFullYear() > 2100) throw new EditorialError('Data fora do intervalo permitido.');
+  if (parsed.getUTCFullYear() < 2000 || parsed.getUTCFullYear() > 2100) throw new EditorialError('Fecha fuera del intervalo permitido.');
   return parsed.toISOString();
 }
 export function newsInput(form: FormData) {
   const title = text(form, 'title', 240, true);
   const body = text(form, 'body', 100000, true);
-  if (!plainText(body)) throw new EditorialError('Escreva conteúdo textual para a notícia.');
+  if (!plainText(body)) throw new EditorialError('Escribí el texto de la noticia.');
   const status = text(form, 'status', 20) as NewsStatus;
   if (!statuses.includes(status)) throw new EditorialError('Status inválido.');
   const categoryIds = [...new Set(form.getAll('category_ids').map(value => uuid(String(value))))];
-  if (!categoryIds.length || categoryIds.length > 20) throw new EditorialError('Selecione de 1 a 20 categorias.');
+  if (!categoryIds.length || categoryIds.length > 20) throw new EditorialError('Seleccioná de 1 a 20 categorías.');
   const cover = mediaPath(text(form, 'cover_image', 200));
   const coverAlt = text(form, 'cover_alt', 300, Boolean(cover));
   let published = date(text(form, 'published_at', 30));
   const scheduled = date(text(form, 'scheduled_at', 30));
   if (status === 'PUBLISHED') {
     published ||= new Date().toISOString();
-    if (Date.parse(published) > Date.now()) throw new EditorialError('Para data futura, utilize o status Agendada.');
+    if (Date.parse(published) > Date.now()) throw new EditorialError('Para una fecha futura, elegí Programada.');
   }
-  if (status === 'SCHEDULED' && !scheduled) throw new EditorialError('Informe a data de agendamento.');
+  if (status === 'SCHEDULED' && !scheduled) throw new EditorialError('Indicá la fecha de programación.');
   const canonical = text(form, 'canonical_url', 2048);
   const sourceUrl = text(form, 'source_url', 2048);
   if(sourceUrl) {
     try { const url=new URL(sourceUrl); if(!['http:','https:'].includes(url.protocol) || url.username || url.password) throw new Error(); }
-    catch { throw new EditorialError('URL da fonte inválida.'); }
+    catch { throw new EditorialError('URL de fuente inválida.'); }
   }
   if (canonical) {
     try { const url = new URL(canonical); if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.hash) throw new Error(); }
-    catch { throw new EditorialError('URL canônica inválida. Use uma URL completa HTTP(S), sem credenciais ou fragmento.'); }
+    catch { throw new EditorialError('URL canónica inválida. Usá una URL HTTP(S) completa, sin credenciales ni fragmento.'); }
   }
   return {
     title, slug: slug(form, title), subtitle: text(form, 'subtitle', 400), excerpt: text(form, 'excerpt', 600), body,

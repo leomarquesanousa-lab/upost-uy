@@ -24,13 +24,16 @@ test('storage: local compatibility, R2 upload/read/range/cleanup and safe failur
     process.env.UPLOAD_DIR = directory;
     process.env.NODE_ENV = 'development';
     const bytes = Buffer.from('0123456789');
-    await assert.rejects(storage.storeImage(bytes), /Configure o R2/);
-    assert.equal((await readdir(directory)).length, 0, 'Missing R2 never writes editorial images locally');
+    const developmentImage = await storage.storeImage(bytes);
+    assert.deepEqual(await storage.readImage(path.basename(developmentImage)), bytes);
+    assert.deepEqual(await storage.imageObjectInfo(developmentImage), { size: bytes.length, mimeType: 'image/webp' });
+    await storage.discardImage(developmentImage);
+    assert.equal((await readdir(directory)).length, 0, 'Verified local development images can be cleaned up safely');
     localImage = '/media/12345678-1234-1234-1234-123456789abc.webp';
     await writeFile(path.join(directory, path.basename(localImage)), bytes);
     process.env.NODE_ENV = 'production';
     await assert.rejects(storage.storeImage(bytes), /Configure o R2/);
-    await assert.rejects(storage.readImage(path.basename(localImage)), /Configure o R2/);
+    assert.deepEqual(await storage.readImage(path.basename(localImage)), bytes);
     process.env.NODE_ENV = 'development';
     localVideo = await storage.storeVideo(bytes, 'video/mp4');
     assert.deepEqual(await storage.readImage(path.basename(localImage)), bytes);
@@ -46,10 +49,10 @@ test('storage: local compatibility, R2 upload/read/range/cleanup and safe failur
     assert.equal(await storage.readVideo('../escape.mp4'), null);
     await assert.rejects(storage.storeVideo(bytes, 'text/html'));
 
-    Object.assign(process.env, { R2_ACCOUNT_ID: 'test', R2_ACCESS_KEY_ID: 'test', R2_SECRET_ACCESS_KEY: 'test', R2_BUCKET_NAME: 'test', R2_ENDPOINT: 'https://test.r2.cloudflarestorage.com', R2_PUBLIC_URL: 'https://media.example.test' });
+    Object.assign(process.env, { R2_ACCOUNT_ID: 'test', R2_ACCESS_KEY_ID: 'test', R2_SECRET_ACCESS_KEY: 'test', R2_BUCKET_NAME: 'upost-media', R2_ENDPOINT: 'https://test.r2.cloudflarestorage.com', R2_PUBLIC_URL: 'https://media.example.test' });
     S3Client.prototype.send = async function(command) {
       if (command.constructor.name === 'PutObjectCommand') {
-        assert.equal(command.input.Bucket, 'test');
+        assert.equal(command.input.Bucket, 'upost-media');
         objects.set(command.input.Key, command.input);
       } else if (command.constructor.name === 'DeleteObjectCommand') objects.delete(command.input.Key);
       else if (command.constructor.name === 'HeadObjectCommand') {
@@ -83,7 +86,8 @@ test('storage: local compatibility, R2 upload/read/range/cleanup and safe failur
     assert.deepEqual(await storage.readImage(path.basename(image)), bytes);
     assert.deepEqual(await storage.imageObjectInfo(image), { size: bytes.length, mimeType: 'image/webp' });
     process.env.NODE_ENV = 'production';
-    assert.equal(await storage.readImage(path.basename(localImage)), null, 'Production never reads legacy local images');
+    assert.deepEqual(await storage.readImage(path.basename(localImage)), bytes, 'Legacy images remain available before migration');
+    assert.deepEqual(await storage.imageObjectInfo(localImage), {size:bytes.length,mimeType:'image/webp'});
     process.env.NODE_ENV = 'development';
     assert.deepEqual(await storage.readImage(path.basename(localImage)), bytes);
     const remote = await storage.readVideoResponse(path.basename(video), new Request('https://site.test/video', { headers: { range: 'bytes=2-5' } }));

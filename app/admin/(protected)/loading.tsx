@@ -1,0 +1,1 @@
+export default function AdminLoading(){return <section aria-busy="true"><p className="eyebrow">UPOST.uy</p><h1>Cargando panel…</h1><p role="status">Verificando los datos administrativos.</p></section>;}

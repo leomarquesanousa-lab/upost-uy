@@ -1,0 +1,33 @@
+.top { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 14px; margin: 0 0 20px; }
+.carousel, .advertisement { position: relative; height: 168px; min-width: 0; overflow: hidden; border-radius: 10px; background: #fff; border: 0; box-shadow: none; }
+.carousel { grid-column: 1; }
+.advertisement { grid-column: 2; }
+.radioSpot { grid-column: 2; height: 168px; min-width: 0; }
+.slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 600ms ease, visibility 0s linear 600ms; pointer-events: none; }
+.active { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+.photoCredit { position: absolute; bottom: 5px; left: 6px; max-width: calc(50% - 64px); padding: 2px 4px; border-radius: 3px; background: #171717bf; color: #fff; font-size: 9px; line-height: 1.3; text-decoration: none; }
+.creative { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+.creative picture { display: block; width: 100%; height: 100%; }
+.creative img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.advertisement small { position: absolute; z-index: 1; top: 6px; left: 10px; color: #626262; background: #ffffffeb; padding: 2px 5px; border-radius: 3px; font-size: 9px; line-height: 1.4; }
+.top.top .arrow { position: absolute; z-index: 2; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 28px; min-height: 32px; padding: 0; border: 1px solid #e5e5e5; border-radius: 5px; background: #ffffffeb; color: #171717; font-size: 24px; font-weight: 400; }
+.previous { left: 8px; }.next { right: 8px; }
+.controls { position: absolute; z-index: 2; bottom: 3px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; background: #ffffffeb; border-radius: 4px; padding: 0 3px; max-width: calc(100% - 80px); overflow-x: auto; scrollbar-width: none; }
+.top.top .dot, .top.top .play { display: grid; place-items: center; flex-shrink: 0; min-height: 24px; width: 24px; padding: 0; border: 0; border-radius: 0; background: transparent; color: #171717; }
+.dot span { width: 5px; height: 5px; border-radius: 50%; background: #999; }
+.dot[aria-current=true] span { background: #a71922; }
+.top .play { font-size: 9px; }
+.top :is(button, a):focus-visible { outline: 2px solid #a71922; outline-offset: -3px; }
+@media(min-width: 641px) and (max-width: 1024px) {
+  .carousel, .advertisement { height: 150px; }
+  .radioSpot { height: 150px; }
+}
+@media(max-width: 640px) {
+  .top { grid-template-columns: minmax(0, 1fr); gap: 14px; margin-bottom: 18px; }
+  .carousel, .advertisement { height: 120px; }
+  .advertisement { grid-column: 1; }
+  .radioSpot { grid-column: 1; height: 136px; }
+  .top.top .arrow { min-height: 32px; }
+  .top.top .dot, .top.top .play { min-height: 26px; }
+}
+@media(prefers-reduced-motion: reduce) { .slide { transition: none; } }

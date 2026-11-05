@@ -7,7 +7,7 @@ import { VideoDeleteButton } from '@/components/videos/video-delete-button';
 import { adminVideoList } from '@/server/services/videos';
 
 const statusLabel = {
-  DRAFT: 'Rascunho',
+  DRAFT: 'Borrador',
   PUBLISHED: 'Publicado',
   ARCHIVED: 'Arquivado',
 };
@@ -26,7 +26,7 @@ export default async function Page() {
 
       <div className="editorial-heading">
         <h1>
-          Vídeos
+          Videos
         </h1>
 
         <Link

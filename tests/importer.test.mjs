@@ -24,8 +24,8 @@ test('valida DNS completo, fixa endereço e revalida cada redirecionamento',asyn
   assert.equal(page.url,'https://example.com/article');
 });
 test('timeout inclui resolução DNS e resposta remota',async()=>{
-  await assert.rejects(()=>fetchRemotePage('https://example.com',{resolve:()=>new Promise(()=>{}),timeoutMs:20}),/demorou/);
-  await assert.rejects(()=>fetchRemotePage('https://example.com',{resolve,request:()=>new Promise(()=>{}),timeoutMs:20}),/demorou/);
+  await assert.rejects(()=>fetchRemotePage('https://example.com',{resolve:()=>new Promise(()=>{}),timeoutMs:20}),/demoró/);
+  await assert.rejects(()=>fetchRemotePage('https://example.com',{resolve,request:()=>new Promise(()=>{}),timeoutMs:20}),/demoró/);
 });
 
 test('download de imagem revalida DNS/redirects e limita MIME, bytes e timeout', async () => {
@@ -35,7 +35,7 @@ test('download de imagem revalida DNS/redirects e limita MIME, bytes e timeout',
   await assert.rejects(fetchRemoteImage('https://example.com/image', { resolve, request: async () => ({ status: 302, location: 'http://169.254.169.254/image' }) }));
   await assert.rejects(fetchRemoteImage('https://example.com/image', { resolve, request, maxBytes: 2 }));
   await assert.rejects(fetchRemoteImage('https://example.com/image', { resolve, request: async () => ({ status: 200, bytes: Buffer.from('svg'), mimeType: 'image/svg+xml' }) }));
-  await assert.rejects(fetchRemoteImage('https://example.com/image', { resolve: () => new Promise(() => {}), request, timeoutMs: 20 }), /demorou/);
+  await assert.rejects(fetchRemoteImage('https://example.com/image', { resolve: () => new Promise(() => {}), request, timeoutMs: 20 }), /demoró/);
 });
 
 test('transporte de imagem valida MIME real da resposta, limite em streaming e compressão', async () => {

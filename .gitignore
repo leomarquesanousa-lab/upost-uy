@@ -36,8 +36,17 @@ yarn-error.log*
 /.local-postgres/
 /test-results/
 /storage/uploads/
+/storage/backups/
+/storage/logs/
 /.test-postgres/
 /playwright-report/
+
+# Local diagnostics; not required for installation or production.
+/check-upost-db.mjs
+/check-upost-tables.mjs
+/docs/UPOST-FONTES-RESULTADO.json
+/docs/UPOST-FOTOS-RESULTADO.json
+/scripts/test-simple-banners.mjs
 
 # vercel
 .vercel

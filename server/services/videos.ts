@@ -215,7 +215,7 @@ function publishedDate(
     )
   ) {
     throw new EditorialError(
-      'Data de publicação inválida.',
+      'Fecha de publicación inválida.',
     );
   }
 
@@ -419,7 +419,7 @@ export async function saveVideo(
       await checkMedia(
         client,
         thumbnail,
-        'Imagem de capa não encontrada. Envie novamente.',
+        'Imagen de portada não encontrada. Envie novamente.',
       );
 
       if (
@@ -452,7 +452,7 @@ export async function saveVideo(
         !previous
       ) {
         throw new EditorialError(
-          'Vídeo não encontrado.',
+          'Video não encontrado.',
         );
       }
 
@@ -618,7 +618,7 @@ export async function deleteVideo(
         !existing.rowCount
       ) {
         throw new EditorialError(
-          'Vídeo não encontrado.',
+          'Video não encontrado.',
         );
       }
 

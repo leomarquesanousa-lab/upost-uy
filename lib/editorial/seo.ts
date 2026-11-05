@@ -4,11 +4,11 @@ import type { News } from './types';
 
 export function siteUrl() {
   try {
-    const url = new URL(process.env.SITE_URL || 'http://localhost:3000');
+    const url = new URL(process.env.SITE_URL || 'https://upost.uy');
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error();
     return url.origin;
   } catch {
-    return 'http://localhost:3000';
+    return 'https://upost.uy';
   }
 }
 
@@ -40,7 +40,7 @@ export function pageMetadata({
     alternates: { canonical: url },
     openGraph: {
       type: 'website',
-      locale: 'pt_BR',
+      locale: 'es_UY',
       title,
       description,
       url,

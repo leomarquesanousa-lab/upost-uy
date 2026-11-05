@@ -8,7 +8,7 @@ export default async function Page() {
 
   return (
     <>
-      <h1>Integrações</h1>
+      <h1>Integraciones</h1>
       <p>Configure Google Analytics e Google AdSense sem editar o código do portal.</p>
       <IntegrationsForm values={values} />
     </>

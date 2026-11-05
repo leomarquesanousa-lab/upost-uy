@@ -4,7 +4,7 @@ import type { PoolClient } from 'pg';
 import { getPool } from '@/lib/db/pool';
 import { EditorialError } from '@/lib/editorial/validation';
 import { normalizeImage } from '@/lib/editorial/image.mjs';
-import { storeImage, discardImage, imageObjectInfo } from './storage';
+import { storeImage, discardImage, imageObjectInfo, imageStorageProvider } from './storage';
 
 type UploadOrigin = { sourceType: 'manual' } | { sourceType: 'import'; sourceHost: string };
 
@@ -16,7 +16,7 @@ export async function persistEditorialImage(
   let bytes: Buffer;
   try { bytes = await normalizeImage(input.bytes, input.filename, input.mimeType); }
   catch { throw new EditorialError('Use JPEG, PNG ou WebP válido, até 5 MB e 20 megapixels.'); }
-  const url = await storeImage(bytes); // PUT and HEAD must succeed before any database write.
+  const url = await storeImage(bytes); // Write and verify the storage object before registering it.
   let client: PoolClient | undefined;
   let commitAttempted = false;
   try {
@@ -25,7 +25,7 @@ export async function persistEditorialImage(
     const id = randomUUID();
     await client.query("INSERT INTO media_assets(id,path,mime_type,size,created_by) VALUES($1,$2,'image/webp',$3,$4)", [id,url,bytes.length,userId]);
     const metadata = {
-      storageProvider: 'r2', objectKey: url.slice(1), size: bytes.length,
+      storageProvider: imageStorageProvider(), objectKey: url.slice(1), size: bytes.length,
       mimeType: 'image/webp', ...origin, createdAt: new Date().toISOString(),
     };
     await client.query("INSERT INTO audit_log(user_id,action,entity,entity_id,metadata) VALUES($1,'media.upload','media_assets',$2,$3)", [userId,id,JSON.stringify(metadata)]);
@@ -47,7 +47,7 @@ export async function inspectEditorialImage(url: string, db: Pick<PoolClient, 'q
   )).rows[0];
   const object = await imageObjectInfo(url);
   return {
-    path: url, storageProvider: 'r2', objectKey: url.slice(1),
+    path: url, storageProvider: imageStorageProvider(), objectKey: url.slice(1),
     registered: Boolean(record), exists: Boolean(object),
     usable: Boolean(record && object && object.size > 0 && object.mimeType === 'image/webp'),
     recordedSize: record?.size ?? null, actualSize: object?.size ?? null,

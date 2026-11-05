@@ -35,7 +35,7 @@ export async function saveTaxonomy(kind: TaxonomyKind, form: FormData, userId: s
       const update = kind === 'categories'
         ? await client.query('UPDATE categories SET name=$2,slug=$3,description=$4,active=$5,updated_at=now() WHERE id=$1', [id, name, itemSlug, description, active])
         : await client.query('UPDATE authors SET name=$2,slug=$3,bio=$4,photo_url=$5,active=$6,updated_at=now() WHERE id=$1', [id, name, itemSlug, description, photo, active]);
-      if (!update.rowCount) throw new EditorialError('Registro não encontrado.');
+      if (!update.rowCount) throw new EditorialError('Registro no encontrado.');
     } else if (kind === 'categories') {
       await client.query('INSERT INTO categories(id,name,slug,description,active) VALUES($1,$2,$3,$4,$5)', [key,name,itemSlug,description,active]);
     } else {
@@ -50,31 +50,37 @@ export async function deleteTaxonomy(kind: TaxonomyKind, form: FormData, userId:
   const table = kind === 'categories' ? 'categories' : 'authors';
   await transaction(async client => {
     const existing = await client.query(`SELECT id FROM ${table} WHERE id=$1 FOR UPDATE`, [id]);
-    if (!existing.rowCount) throw new EditorialError('Registro não encontrado.');
+    if (!existing.rowCount) throw new EditorialError('Registro no encontrado.');
     const references = kind === 'categories'
       ? await client.query('SELECT 1 FROM news_categories WHERE category_id=$1 LIMIT 1', [id])
       : await client.query('SELECT 1 FROM news WHERE author_id=$1 LIMIT 1', [id]);
-    if (references.rowCount) throw new EditorialError('Este registro está vinculado a notícias. Desative-o em vez de excluir.');
+    if (references.rowCount) throw new EditorialError('Este registro tiene noticias vinculadas. Desactivalo en lugar de eliminarlo.');
     const result = await client.query(`DELETE FROM ${table} WHERE id=$1`, [id]);
-    if (!result.rowCount) throw new EditorialError('Registro não encontrado.');
+    if (!result.rowCount) throw new EditorialError('Registro no encontrado.');
     await audit(client,userId,`${table}.delete`,table,id);
   });
 }
-export async function saveNews(form: FormData, userId: string) {
+export async function saveNews(form: FormData, userId: string, sourceImport?: {resourceId:string;identifier:string}) {
   const input = newsInput(form);
   const id = text(form, 'id', 36);
   if (id) uuid(id);
+  if(sourceImport){uuid(sourceImport.resourceId);if(!sourceImport.identifier||sourceImport.identifier.length>2048||id||!input.source_url)throw new EditorialError('Identificador de fuente inválido.');}
   const version = Number(text(form, 'version', 12));
   return transaction(async client => {
     const previous = id ? (await client.query('SELECT * FROM news WHERE id=$1 FOR UPDATE', [id])).rows[0] : null;
-    if (id && !previous) throw new EditorialError('Notícia não encontrada.');
-    if (previous && previous.version !== version) throw new EditorialError('Esta notícia foi alterada em outra aba. Recarregue a página antes de editar novamente.');
+    if (!id && form.get('imported') === '1' && input.source_url) {
+      await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [input.source_url]);
+      const duplicate = await client.query('SELECT id FROM news WHERE source_url=$1 LIMIT 1', [input.source_url]);
+      if (duplicate.rowCount) throw new EditorialError('Esta URL ya fue importada. Editá la noticia existente.');
+    }
+    if (id && !previous) throw new EditorialError('Noticia no encontrada.');
+    if (previous && previous.version !== version) throw new EditorialError('Esta noticia cambió en otra pestaña. Recargá la página antes de editar.');
     const author = (await client.query('SELECT active,photo_url FROM authors WHERE id=$1 FOR SHARE', [input.author_id])).rows[0];
-    if (!author || (!author.active && previous?.author_id !== input.author_id)) throw new EditorialError('Selecione um autor ativo.');
+    if (!author || (!author.active && previous?.author_id !== input.author_id)) throw new EditorialError('Seleccioná un autor activo.');
     await checkMedia(client, author.photo_url);
     const cats = await client.query('SELECT id,active FROM categories WHERE id=ANY($1::uuid[]) FOR SHARE', [input.categoryIds]);
     const oldCats = previous ? (await client.query('SELECT category_id FROM news_categories WHERE news_id=$1', [id])).rows.map(row => row.category_id) : [];
-    if (cats.rowCount !== input.categoryIds.length || cats.rows.some(row => !row.active && !oldCats.includes(row.id))) throw new EditorialError('Selecione categorias ativas.');
+    if (cats.rowCount !== input.categoryIds.length || cats.rows.some(row => !row.active && !oldCats.includes(row.id))) throw new EditorialError('Seleccioná categorías activas.');
     await checkMedia(client, input.cover_image);
     // O corpo permanece Markdown; referências de imagens devem ser uploads existentes.
     const imagePaths = renderedImagePaths(input.body);
@@ -93,6 +99,13 @@ export async function saveNews(form: FormData, userId: string) {
       await client.query(`INSERT INTO news(${names.join(',')},id,created_by,updated_by) VALUES(${names.map((_,i)=>`$${i+1}`).join(',')},$${values.length-1},$${values.length},$${values.length})`, values);
     }
     await client.query('INSERT INTO news_categories(news_id,category_id) SELECT $1,unnest($2::uuid[])', [key,categoryIds]);
+    if(sourceImport)await client.query('INSERT INTO source_news_items(resource_id,source_identifier,canonical_url,news_id) VALUES($1,$2,$3,$4)',[sourceImport.resourceId,sourceImport.identifier,input.source_url,key]);
+    if (form.get('urgent') === 'on') {
+      await client.query("INSERT INTO settings(key,value) VALUES('URGENT_NEWS_ID',$1) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=now()", [key]);
+      await audit(client,userId,'news.urgent','news',key);
+    } else {
+      await client.query("UPDATE settings SET value='',updated_at=now() WHERE key='URGENT_NEWS_ID' AND value=$1", [key]);
+    }
     await audit(client,userId,`news.${previous ? 'update' : 'create'}`,'news',key);
     if(!previous && form.get('imported')==='1' && input.source_url) await audit(client,userId,'news.import','news',key,{source_name:input.source_name,source_host:new URL(input.source_url).hostname});
     if (!previous || previous.status !== input.status) {
@@ -109,7 +122,7 @@ export async function saveNews(form: FormData, userId: string) {
 export function editorialMessage(error: unknown) {
   if (error instanceof EditorialError) return error.message;
   const code = (error as { code?: string })?.code;
-  if (code === '23505') return 'Este slug já está em uso. Escolha outro.';
-  if (code === '23503') return 'Este registro está vinculado a notícias. Desative-o em vez de excluir.';
-  return 'Não foi possível salvar. Verifique a conexão e tente novamente.';
+  if (code === '23505') return 'Este slug ya está en uso. Elegí otro.';
+  if (code === '23503') return 'Este registro tiene noticias vinculadas. Desactivalo en lugar de eliminarlo.';
+  return 'No se pudo guardar. Revisá la conexión e intentá de nuevo.';
 }

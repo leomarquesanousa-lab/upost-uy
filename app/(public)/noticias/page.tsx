@@ -3,8 +3,8 @@ import { PublicNews } from '@/components/editorial/public-news';
 import { pageMetadata } from '@/lib/editorial/seo';
 
 export const metadata: Metadata = pageMetadata({
-  title: 'Notícias | Biosfera Rádio TV Web',
-  description: 'Últimas notícias, informação e conteúdos publicados pela Biosfera Rádio TV Web.',
+  title: 'Noticias | UPOST.uy',
+  description: 'Últimas noticias, informação e contenidos publicados pela UPOST.uy.',
   path: '/noticias',
 });
 

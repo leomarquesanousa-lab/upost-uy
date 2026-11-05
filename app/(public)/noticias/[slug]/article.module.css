@@ -1,0 +1,109 @@
+/* Only the public article uses this module. Legacy preview styles remain isolated. */
+.page.page {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 24px 40px 40px;
+  background: #fff;
+  color: #171717;
+}
+.page .breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 36px;
+  color: #737373;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.breadcrumbs a { padding: 6px 0; }
+.breadcrumbs span { align-self: center; }
+.page .header { max-width: 920px; margin: 0 auto; }
+.categories { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 18px; }
+.categories a { color: #b91c1c; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 6px 0; }
+.page.page .headline {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-size: clamp(36px, 4.2vw, 58px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.035em;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+.page .subtitle { max-width: 800px; margin: 22px 0 0; color: #626262; font-size: 21px; line-height: 1.55; }
+.metadata { display: grid; gap: 10px; margin-top: 28px; }
+.page .byline { margin: 0; font-size: 14px; line-height: 1.6; }
+.page .dates { display: flex; flex-wrap: wrap; gap: 6px 18px; color: #737373; font-size: 12px; line-height: 1.6; }
+.dates p { margin: 0; }
+.timezone { flex-basis: 100%; font-size: 11px; }
+.share :global(.share-links) { gap: 8px 20px; padding: 18px 0 0; margin-top: 18px; border-top: 1px solid #e8e8e8; color: #626262; }
+.share :global(.share-links) > :is(a, button) { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 2px; color: #171717; font-size: 13px; text-decoration: none; }
+.share :global(.share-links) > :is(a, button):hover { color: #b91c1c; text-decoration: underline; }
+.share :global(.share-links) > :last-child:empty { display: none; }
+.page.page .cover { margin: 32px 0 0; }
+.page .cover :global(.article-cover) { display: block; width: 100%; height: auto; max-height: none; aspect-ratio: auto; object-fit: contain; border-radius: 14px; background: #f7f7f7; }
+.page .cover figcaption { margin: 12px 4px 0; color: #737373; font-size: 12px; line-height: 1.6; }
+.page.page .body {
+  max-width: 720px;
+  margin: 40px auto 0;
+  font-family: var(--font-editorial);
+  font-size: 20px;
+  line-height: 1.75;
+  color: #262626;
+  overflow-wrap: break-word;
+}
+.page .body > :first-child { margin-top: 0; }
+.page .body > :last-child { margin-bottom: 0; }
+.page .body p { margin: 0 0 1.3em; }
+.page .body :is(h2, h3, h4) { font-family: var(--font-editorial); line-height: 1.25; letter-spacing: -.02em; margin: 1.7em 0 .65em; text-wrap: pretty; }
+.page .body h2 { font-size: 30px; }
+.page .body :is(h3, h4) { font-size: 25px; }
+.page .body a, .source a { color: #b91c1c; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.page .body :is(ul, ol) { margin: 0 0 1.4em; padding-left: 1.5em; }
+.page .body li { padding-left: .25em; margin: .45em 0; }
+.page .body blockquote { margin: 30px 0; padding: 22px 28px; border-left: 3px solid #b91c1c; border-radius: 0 14px 14px 0; background: #f7f7f7; font-style: italic; }
+.page .body blockquote > :last-child { margin-bottom: 0; }
+.page .body img { display: block; width: auto; max-width: 100%; height: auto; margin: 28px auto; border-radius: 14px; }
+.page .body pre { padding: 24px; border-radius: 14px; background: #f7f7f7; font-size: 15px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.page .body hr { margin: 32px 0; border: 0; border-top: 1px solid #e5e5e5; }
+.footer { max-width: 720px; margin: 32px auto 0; }
+.source { margin: 0; padding: 20px 0; border-top: 1px solid #e8e8e8; font-size: 13px; line-height: 1.7; color: #626262; }
+.author { display: flex; align-items: flex-start; gap: 20px; padding: 28px; margin-top: 16px; border: 1px solid #ececec; border-radius: 14px; background: #fafafa; }
+.author img { flex-shrink: 0; width: 64px; height: 64px; object-fit: cover; border-radius: 50%; }
+.author > div { min-width: 0; }
+.authorLabel { display: block; margin-bottom: 8px; color: #737373; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
+.author strong { display: block; font-size: 15px; line-height: 1.5; }
+.author p { margin: 10px 0 0; color: #626262; font-size: 14px; line-height: 1.7; }
+.related { max-width: 1160px; margin: 32px auto 0; padding: 32px 40px 0; border-top: 1px solid #e5e5e5; }
+.related :global(.section-heading) { margin: 0 0 24px; }
+.related :global(.news-grid) { gap: 28px; align-items: stretch; }
+.related.related :global(.news-card) { padding: 20px; border: 1px solid #e8e8e8; border-radius: 14px; background: #fff; }
+.related :global(.news-card) h2 { font-size: 23px; }
+.page :is(a, button):focus-visible, .related a:focus-visible { outline: 2px solid #b91c1c; outline-offset: 4px; }
+@media (max-width: 1000px) {
+  .page.page { padding: 24px 24px 32px; }
+  .related { padding: 28px 24px 0; }
+}
+@media (max-width: 640px) {
+  /* The public shell supplies 18px gutters; don't double them here. */
+  .page.page { padding: 0 0 28px; }
+  .page .breadcrumbs { margin-bottom: 24px; }
+  .categories { margin-bottom: 14px; }
+  .page.page .headline { font-size: 34px; line-height: 1.13; letter-spacing: -.025em; }
+  .page .subtitle { margin-top: 18px; font-size: 18px; line-height: 1.6; }
+  .metadata { margin-top: 24px; }
+  .page .dates { display: grid; gap: 8px; }
+  .share :global(.share-links) { gap: 8px 16px; }
+  .page.page .cover { margin-top: 24px; }
+  .page .cover figcaption { margin: 10px 2px 0; font-size: 11px; }
+  .page.page .body { margin-top: 28px; font-size: 18px; line-height: 1.75; }
+  .page .body h2 { font-size: 27px; }
+  .page .body :is(h3, h4) { font-size: 23px; }
+  .page .body blockquote { padding: 20px; }
+  .author { padding: 20px; gap: 16px; }
+  .author img { width: 48px; height: 48px; }
+  .related { margin-top: 20px; padding: 28px 0 0; }
+  .related.related :global(.news-card) { padding: 20px; }
+  .related :global(.news-grid) { grid-template-columns: minmax(0, 1fr); }
+}

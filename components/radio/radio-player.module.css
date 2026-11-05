@@ -1,0 +1,54 @@
+.pageWithPlayer { padding-bottom: 96px; }
+.bar { position: fixed; z-index: 40; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e5e5e5; box-shadow: 0 -4px 20px #17171708; color: #171717; padding-bottom: env(safe-area-inset-bottom); }
+.barInner { max-width: 1240px; margin: auto; padding: 14px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto 180px; align-items: center; gap: 24px; }
+.identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.identity > div { min-width: 0; }
+.identity img { width: 40px; height: 40px; object-fit: contain; border-radius: 7px; }
+.identity strong { display: block; font-size: 14px; line-height: 1.5; }
+.identity span:not(.symbol) { display: block; color: #626262; font-size: 11px; line-height: 1.5; }
+.identity small { display: block; color: #737373; font-size: 11px; line-height: 1.5; }
+.symbol { font-size: 28px; color: #a71922; }
+.bar .play, .card button { border: 0; border-radius: 8px; background: #a71922; color: #fff; min-height: 44px; min-width: 44px; padding: 10px 16px; box-shadow: none; }
+.volume { display: grid; gap: 6px; font-size: 11px; color: #626262; }
+.volume input { width: 100%; min-width: 0; height: 20px; padding: 0; accent-color: #a71922; cursor: pointer; }
+.bar :is(button,input,a):focus-visible, .card :is(button,a):focus-visible { outline: 2px solid #a71922; outline-offset: 3px; }
+.card { padding: 24px; border: 1px solid #e5e5e5; border-radius: 14px; background: #fff; min-width: 0; }
+.card > img { display: block; width: 100%; height: 110px; object-fit: contain; margin-bottom: 20px; }
+.card h2 { font: 700 25px/1.2 var(--font-editorial); margin: 10px 0; }
+.card p { color: #626262; font-size: 14px; line-height: 1.65; margin: 12px 0; }
+.card small { color: #a71922; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+.card > a { display: inline-block; margin-bottom: 18px; color: #626262; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.card button { display: block; font-size: 13px; }
+.card [role=status] { font-size: 12px; margin-bottom: 0; }
+.compactCard { display: flex; flex-direction: column; justify-content: center; gap: 16px; height: 100%; min-width: 0; padding: 20px; border: 1px solid #e9e5e1; border-radius: 10px; background: #faf9f7; color: #171717; }
+.compactBrand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.compactBrand > img { width: 44px; height: 44px; object-fit: contain; flex: none; }
+.compactBrand > div { min-width: 0; }
+.compactBrand small { display: inline-flex; align-items: center; gap: 6px; color: #a71922; font-size: 10px; line-height: 1.4; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+.compactBrand small::before { content: ''; width: 5px; height: 5px; background: #a71922; border-radius: 50%; flex: none; }
+.compactBrand h2 { font: 700 21px/1.2 var(--font-editorial); letter-spacing: -.02em; margin: 5px 0 0; overflow-wrap: normal; }
+.compactSymbol { color: #a71922; font-size: 32px; width: 44px; text-align: center; flex: none; }
+.compactControls { display: grid; grid-template-columns: 44px minmax(0,1fr); align-items: center; gap: 12px; }
+.compactCard .compactPlay { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 8px; background: #a71922; color: #fff; font-size: 17px; box-shadow: none; transition: background 180ms ease; }
+.compactCard .compactPlay:hover { background: #8b141c; }
+.compactConnection { min-width: 0; }
+.compactConnection > span { display: block; font-size: 11px; line-height: 1.4; color: #626262; }
+.compactConnection input { display: block; width: 100%; height: 20px; padding: 0; margin: 4px 0 0; accent-color: #a71922; cursor: pointer; }
+.compactCard :is(button,input):focus-visible { outline: 2px solid #a71922; outline-offset: 3px; }
+@media(min-width:641px) and (max-width:1024px) {
+  .compactCard { padding: 14px; gap: 12px; }
+  .compactBrand { gap: 8px; }
+  .compactBrand > img { width: 36px; height: 36px; }
+  .compactBrand h2 { font-size: 18px; }
+  .compactBrand small { font-size: 9px; letter-spacing: .04em; }
+}
+@media(max-width:640px) {
+  .compactCard { padding: 16px 20px; gap: 10px; }
+  .compactBrand > img { width: 40px; height: 40px; }
+  .pageWithPlayer { padding-bottom: 142px; }
+  .barInner { grid-template-columns: minmax(0,1fr) 44px; gap: 10px 16px; padding: 12px 18px; }
+  .volume { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; }
+  .volume input { flex: 1; }
+  .identity strong { font-size: 13px; }
+  .card { padding: 20px; }
+}

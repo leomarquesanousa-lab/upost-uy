@@ -29,6 +29,6 @@ export async function POST(request: Request) {
     return Response.json({ url }, { status: 201 });
   } catch (error) {
     if (error instanceof EditorialError) return Response.json({ error: error.message }, { status: 400 });
-    return Response.json({ error: error instanceof StorageError ? error.message : 'Não foi possível concluir o upload. Tente novamente.' }, { status: 503 });
+    return Response.json({ error: error instanceof StorageError ? error.message : 'No se pudo completar la subida. Intentá de nuevo.' }, { status: 503 });
   }
 }

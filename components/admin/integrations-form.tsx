@@ -72,7 +72,7 @@ export function IntegrationsForm({ values }: { values: IntegrationSettings }) {
         Importante: anúncios do AdSense só aparecem depois que a conta/site estiverem aprovados e a configuração de anúncios estiver concluída no Google AdSense.
       </p>
       <p role="status">{message}</p>
-      <button className="button" disabled={busy}>Salvar integrações</button>
+      <button className="button" disabled={busy}>Guardar integrações</button>
     </form>
   );
 }

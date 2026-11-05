@@ -7,7 +7,7 @@ import {
 } from 'react';
 
 const COOKIE_NAME =
-  'biosfera_cookie_consent';
+  'upost_cookie_consent';
 
 const COOKIE_MAX_AGE =
   60 * 60 * 24 * 365;
@@ -83,7 +83,7 @@ function saveConsent(
 
   window.dispatchEvent(
     new CustomEvent(
-      'biosfera:cookie-consent-changed',
+      'upost:cookie-consent-changed',
       {
         detail: consent,
       },
@@ -181,13 +181,13 @@ export function CookieConsent() {
     }
 
     window.addEventListener(
-      'biosfera:open-cookie-preferences',
+      'upost:open-cookie-preferences',
       openPreferences,
     );
 
     return () => {
       window.removeEventListener(
-        'biosfera:open-cookie-preferences',
+        'upost:open-cookie-preferences',
         openPreferences,
       );
     };
@@ -250,13 +250,13 @@ export function CookieConsent() {
 
           <div className="cookie-heading">
             <span className="cookie-eyebrow">
-              PRIVACIDADE
+              PRIVACIDAD
             </span>
 
             <h2 id="cookie-title">
               {customizing
-                ? 'Escolha como navegar'
-                : 'Cookies, do seu jeito.'}
+                ? 'Elegí cómo navegar'
+                : 'Tus preferencias de cookies.'}
             </h2>
           </div>
         </div>
@@ -267,7 +267,7 @@ export function CookieConsent() {
               Usamos cookies essenciais
               para o portal funcionar.
               Você decide se permite
-              análise e publicidade.
+              análisis e publicidad.
             </p>
 
             <div className="cookie-links">
@@ -278,7 +278,7 @@ export function CookieConsent() {
               <span>•</span>
 
               <Link href="/politica-de-privacidade">
-                Privacidade
+                Privacidad
               </Link>
             </div>
           </>
@@ -294,28 +294,28 @@ export function CookieConsent() {
               <div className="cookie-option">
                 <div className="option-copy">
                   <strong>
-                    Essenciais
+                    Esenciales
                   </strong>
 
                   <span>
-                    Segurança e
-                    funcionamento.
+                    Seguridad y
+                    funcionamiento.
                   </span>
                 </div>
 
                 <span className="always-on">
-                  Sempre ativo
+                  Siempre activo
                 </span>
               </div>
 
               <label className="cookie-option">
                 <div className="option-copy">
                   <strong>
-                    Análise
+                    Análisis
                   </strong>
 
                   <span>
-                    Ajuda a entender o
+                    Ayuda a entender el
                     uso do portal.
                   </span>
                 </div>
@@ -336,19 +336,19 @@ export function CookieConsent() {
                       }),
                     )
                   }
-                  aria-label="Permitir cookies de análise"
+                  aria-label="Permitir cookies de análisis"
                 />
               </label>
 
               <label className="cookie-option">
                 <div className="option-copy">
                   <strong>
-                    Publicidade
+                    Publicidad
                   </strong>
 
                   <span>
-                    Recursos e medição
-                    de anúncios.
+                    Recursos y medición
+                    de anuncios.
                   </span>
                 </div>
 
@@ -368,7 +368,7 @@ export function CookieConsent() {
                       }),
                     )
                   }
-                  aria-label="Permitir cookies de publicidade"
+                  aria-label="Permitir cookies de publicidad"
                 />
               </label>
             </div>
@@ -385,7 +385,7 @@ export function CookieConsent() {
                   rejectOptional
                 }
               >
-                Recusar
+                Rechazar
               </button>
 
               <button
@@ -415,7 +415,7 @@ export function CookieConsent() {
                   rejectOptional
                 }
               >
-                Só essenciais
+                Solo esenciales
               </button>
 
               <button
@@ -425,7 +425,7 @@ export function CookieConsent() {
                   savePreferences
                 }
               >
-                Salvar escolhas
+                Guardar preferencias
               </button>
             </>
           )}
@@ -439,7 +439,7 @@ export function CookieConsent() {
               setCustomizing(false)
             }
           >
-            ← Voltar
+            ← Volver
           </button>
         ) : null}
       </section>
@@ -1000,7 +1000,7 @@ export function CookiePreferencesButton() {
   function openPreferences() {
     window.dispatchEvent(
       new Event(
-        'biosfera:open-cookie-preferences',
+        'upost:open-cookie-preferences',
       ),
     );
   }
@@ -1022,7 +1022,7 @@ export function CookiePreferencesButton() {
         textAlign: 'left',
       }}
     >
-      Preferências de cookies
+      Preferencias de cookies
     </button>
   );
 }

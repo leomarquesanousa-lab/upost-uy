@@ -24,7 +24,7 @@ export async function newsAction(form: FormData): Promise<ActionResult> {
 export async function previewBody(body: string) {
   try {
     await requireMutation();
-    if (typeof body !== 'string' || body.length > 100000) return { error: 'Conteúdo excede 100 mil caracteres.' };
+    if (typeof body !== 'string' || body.length > 100000) return { error: 'Contenido excede 100 mil caracteres.' };
     return { html: renderBody(body) };
-  } catch { return { error: 'Não foi possível gerar a prévia. Verifique sua sessão.' }; }
+  } catch { return { error: 'No se pudo generar la vista previa. Revisá tu sesión.' }; }
 }

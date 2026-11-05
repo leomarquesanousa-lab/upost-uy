@@ -1,0 +1,52 @@
+{
+  "databaseFingerprint": "28fefbfb8169c488",
+  "articles": [
+    {
+      "sourceName": "Montevideo Portal",
+      "feedUrl": "https://www.montevideo.com.uy/anxml.aspx?58",
+      "url": "https://www.montevideo.com.uy/Noticias/Meteorologo-advierte-por-ciclon-extratropical-en-4-departamentos-uruguayos-cuando-y-donde-uc980927",
+      "title": "Meteorólogo advierte por ciclón extratropical en 4 departamentos uruguayos: cuándo y dónde",
+      "publishedAt": "2026-11-03T23:02:00.000Z",
+      "category": { "slug": "uruguay", "name": "Uruguay" },
+      "featured": true,
+      "summary": "Montevideo Portal recoge la advertencia de un meteorólogo sobre un ciclón extratropical que podría afectar a cuatro departamentos. El informe señala la posibilidad de ráfagas de viento y lluvias asociadas a un frente frío."
+    },
+    {
+      "sourceName": "Montevideo Portal",
+      "feedUrl": "https://www.montevideo.com.uy/anxml.aspx?58",
+      "url": "https://www.montevideo.com.uy/Deportes/Nacional-enfrenta-a-Ferro-Carril-en-octavos-de-la-Copa-AUF-Uruguay--No-los-subestimamos--uc980933",
+      "title": "Nacional enfrenta a Ferro Carril en octavos de la Copa AUF Uruguay: “No los subestimamos”",
+      "publishedAt": "2026-11-03T23:38:00.000Z",
+      "visibleDate": "03.11.2026 20:38",
+      "category": { "slug": "deportes", "name": "Deportes" },
+      "summary": "Nacional viajó a Paysandú para enfrentar a Ferro Carril de Salto por los octavos de final de la Copa AUF Uruguay. Daniel Carreño destacó la importancia de la competencia y aseguró que su equipo no subestima al rival."
+    },
+    {
+      "sourceName": "la diaria",
+      "feedUrl": "https://ladiaria.com.uy/feeds/articulos",
+      "url": "https://ladiaria.com.uy/ciencia/articulo/2026/11/la-superficie-urbanizada-de-uruguay-crecio-125-entre-1985-y-2025/",
+      "title": "La superficie urbanizada de Uruguay creció 125% entre 1985 y 2025",
+      "publishedAt": "2026-11-04T03:19:30.000Z",
+      "category": { "slug": "sociedad", "name": "Sociedad" },
+      "summary": "La nueva colección de MapBiomas Uruguay permite seguir cuatro décadas de cambios en el uso del suelo. Según la diaria, aumentaron las áreas urbanizadas, agrícolas y forestadas, mientras la vegetación natural perdió superficie entre 1985 y 2025."
+    },
+    {
+      "sourceName": "la diaria",
+      "feedUrl": "https://ladiaria.com.uy/feeds/articulos",
+      "url": "https://ladiaria.com.uy/mundo/articulo/2026/11/protestas-en-albania-el-aguila-contra-los-flamencos/",
+      "title": "Protestas en Albania: el águila contra los flamencos",
+      "publishedAt": "2026-11-04T03:19:30.000Z",
+      "category": { "slug": "mundo", "name": "Mundo" },
+      "summary": "Las manifestaciones continúan en Tirana con reclamos de dimisión del primer ministro Edi Rama. La crónica de la diaria describe protestas surgidas por denuncias de corrupción y por el uso de recursos públicos, que luego incorporaron cuestionamientos a un proyecto turístico."
+    },
+    {
+      "sourceName": "la diaria",
+      "feedUrl": "https://ladiaria.com.uy/feeds/articulos",
+      "url": "https://ladiaria.com.uy/cultura/articulo/2026/11/vuelve-zafhfaroni-la-legendaria-banda-uruguaya-de-jazz-rock-fusion/",
+      "title": "Vuelve Zafhfaroni, la legendaria banda uruguaya de jazz-rock fusión",
+      "publishedAt": "2026-11-03T13:35:43.000Z",
+      "category": { "slug": "cultura", "name": "Cultura" },
+      "summary": "Zafhfaroni vuelve a los escenarios con material de sus discos. La diaria repasa la trayectoria de la banda uruguaya de jazz-rock fusión y anuncia sus presentaciones durante los dos primeros martes de noviembre."
+    }
+  ]
+}

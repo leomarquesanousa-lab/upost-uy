@@ -9,4 +9,5 @@ export type News = {
   featured: boolean; seo_title: string; seo_description: string; canonical_url: string;
   created_at: Date; updated_at: Date; version: number; categories: Taxonomy[];
   source_name: string; source_url: string;
+  urgent?: boolean;
 };

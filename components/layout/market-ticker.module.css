@@ -1,0 +1,22 @@
+.ticker { background: #a71922; color: #fff; height: 34px; width: 100%; overflow: hidden; }
+.inner { display: flex; align-items: center; gap: 18px; height: 100%; min-width: 0; }
+.label { flex: none; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.viewport { flex: 1; min-width: 0; overflow: hidden; }
+.track { display: flex; width: max-content; animation: ticker 110s linear infinite; }
+.group { display: flex; flex-shrink: 0; align-items: center; }
+.group a { display: inline-flex; align-items: center; gap: 10px; padding: 0 24px; border-right: 1px solid #ffffff50; color: #fff; white-space: nowrap; font-size: 11px; line-height: 32px; }
+.group strong { font-weight: 650; }
+.group time { font-size: 10px; opacity: .8; }
+.ticker:hover .track, .ticker:focus-within .track, .paused { animation-play-state: paused; }
+.source { flex: none; font-size: 10px; color: #fff; white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; }
+.ticker .pause { flex: none; width: 24px; min-height: 30px; padding: 0; background: transparent; color: #fff; border: 0; border-radius: 0; font-size: 12px; }
+.ticker :is(a, button):focus-visible { outline: 1px solid #fff; outline-offset: -2px; }
+.unavailable { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; line-height: 32px; }
+@keyframes ticker { to { transform: translateX(-50%); } }
+@media(max-width: 640px) { .inner { gap: 10px; } .label { display: none; } .group a { padding: 0 16px; } .source { font-size: 9px; } }
+@media(prefers-reduced-motion: reduce) {
+  .viewport { overflow-x: auto; scrollbar-width: none; }
+  .track { animation: none; }
+  .group[aria-hidden=true] { display: none; }
+  .pause { display: none; }
+}

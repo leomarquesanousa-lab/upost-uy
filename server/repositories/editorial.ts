@@ -5,10 +5,10 @@ import { requireEditorial } from '@/lib/auth/editorial';
 import type { News, Taxonomy, TaxonomyKind } from '@/lib/editorial/types';
 import { statuses, uuid } from '@/lib/editorial/validation';
 
-const projection = `n.*, a.name AS author_name, a.bio AS author_bio, a.photo_url AS author_photo,
+const projection = `n.*, COALESCE(n.id::text=(SELECT value FROM settings WHERE key='URGENT_NEWS_ID'),false) AS urgent, a.name AS author_name, a.bio AS author_bio, a.photo_url AS author_photo,
   COALESCE((SELECT json_agg(json_build_object('id',c.id,'name',c.name,'slug',c.slug,'active',c.active) ORDER BY c.name)
     FROM news_categories nc JOIN categories c ON c.id=nc.category_id WHERE nc.news_id=n.id), '[]') AS categories`;
-export type NewsFilters = { q?: string; status?: string; category?: string; author?: string; page?: string; featured?: boolean; exclude?: string; limit?: number };
+export type NewsFilters = { q?: string; status?: string; category?: string; author?: string; source?:string; sourceId?:string; page?: string; featured?: boolean; exclude?: string; limit?: number };
 export function queryValue(value: string | string[] | undefined) { return typeof value === 'string' ? value : ''; }
 export async function taxonomyList(kind: TaxonomyKind, publicOnly = false): Promise<Taxonomy[]> {
   if (!publicOnly) await requireEditorial();
@@ -29,12 +29,14 @@ export async function listNews(filters: NewsFilters = {}, admin = false) {
   const q = filters.q?.trim().slice(0, 200);
   if (q) {
     const ref = bind(q);
-    clauses.push(`(to_tsvector('portuguese',n.title || ' ' || n.subtitle || ' ' || n.excerpt) @@ websearch_to_tsquery('portuguese',${ref})
+    clauses.push(`(to_tsvector('spanish',n.title || ' ' || n.subtitle || ' ' || n.excerpt) @@ websearch_to_tsquery('spanish',${ref})
       OR strpos(lower(n.title || ' ' || n.subtitle || ' ' || n.excerpt), lower(${ref})) > 0)`);
   }
   if (admin && filters.status && statuses.includes(filters.status as typeof statuses[number])) clauses.push(`n.status=${bind(filters.status)}`);
   if (filters.category) clauses.push(`EXISTS (SELECT 1 FROM news_categories nc JOIN categories c ON c.id=nc.category_id WHERE nc.news_id=n.id AND c.slug=${bind(filters.category)} ${admin ? '' : 'AND c.active'})`);
   if (filters.author) clauses.push(`a.slug=${bind(filters.author)}`);
+  if (filters.sourceId) clauses.push(`(n.source_name=${bind(filters.source||'')} OR EXISTS (SELECT 1 FROM source_news_items si WHERE si.news_id=n.id AND si.resource_id=${bind(filters.sourceId)}::uuid))`);
+  else if (filters.source) clauses.push(`n.source_name=${bind(filters.source)}`);
   if (filters.featured) clauses.push('n.featured');
   if (filters.exclude) clauses.push(`n.id<>${bind(filters.exclude)}::uuid`);
   const table = admin ? 'news' : 'public_news';
@@ -62,6 +64,15 @@ export async function sitemapNews() {
 }
 export async function homeNews() {
   const result=await getPool().query<News>(`SELECT ${projection} FROM public_news n JOIN authors a ON a.id=n.author_id
-    ORDER BY n.visible_at DESC,n.id LIMIT 13`);
+    ORDER BY urgent DESC,n.featured DESC,n.visible_at DESC,n.id LIMIT 50`);
   return {lead:result.rows.slice(0,3),recent:result.rows.slice(3),renderedAt:Date.now()};
+}
+export async function sourceNewsHighlights(urls:string[]){
+ try{
+  const result=await getPool().query<News & {resource_url:string}>(`SELECT DISTINCT ON (r.id) ${projection},r.url AS resource_url
+   FROM portal_resources r JOIN source_news_items si ON si.resource_id=r.id JOIN public_news n ON n.id=si.news_id JOIN authors a ON a.id=n.author_id
+   WHERE r.active AND r.kind='source' AND r.url=ANY($1::text[]) AND n.cover_image<>''
+   ORDER BY r.id,n.published_at DESC,n.created_at DESC,n.id`,[urls]);
+  return result.rows.sort((a,b)=>urls.indexOf(a.resource_url)-urls.indexOf(b.resource_url));
+ }catch(error){if((error as {code?:string}).code==='42P01')return [];throw error;}
 }

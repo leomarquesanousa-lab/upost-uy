@@ -1,5 +1,5 @@
 export const roleLabels: Record<string, string> = {
-  OWNER: 'Proprietário',
+  OWNER: 'Propietario',
   ADMIN: 'Administrador',
-  EDITOR: 'Operador',
+  EDITOR: 'Editor',
 };

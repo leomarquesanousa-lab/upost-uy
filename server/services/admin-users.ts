@@ -38,7 +38,7 @@ export async function saveUser(form:FormData,actorId:string,self=false){
  const actor=await freshActor(client,actorId);
  const existing=creating?null:(await client.query('SELECT * FROM users WHERE id=$1 AND deleted_at IS NULL FOR UPDATE',[id])).rows[0];
  if(!creating&&!existing)throw new EditorialError('Usuário não encontrado.');
- if(self&&(form.has('role')||form.has('email')||form.has('active')))throw new EditorialError('Minha Conta permite alterar apenas nome e senha.');
+ if(self&&(form.has('role')||form.has('email')||form.has('active')))throw new EditorialError('Mi cuenta permite alterar apenas nome e senha.');
  const role=self?actor.role:intent==='save'?text(form,'role',10,true):existing.role;
  if(!['OWNER','ADMIN','EDITOR'].includes(role)||(!self&&!canManageUser(actor.role,existing?.role||role,role)))throw new EditorialError('Você não tem permissão para gerenciar este usuário ou conceder este papel.');
  let active=self?true:intent==='delete'||intent==='deactivate'?false:intent==='activate'?true:intent==='save'?form.get('active')==='on':existing.active;
@@ -48,7 +48,7 @@ export async function saveUser(form:FormData,actorId:string,self=false){
  }
  const events:string[]=[];
  if(intent==='password'){
-  const current=String(form.get('current_password')||'');if(!current||current.length>256||!await verifyPassword(current,existing.password_hash))throw new EditorialError('Senha atual incorreta.');
+  const current=String(form.get('current_password')||'');if(!current||current.length>256||!await verifyPassword(current,existing.password_hash))throw new EditorialError('Contraseña atual incorreta.');
  }
  if(intent==='reset'||intent==='password'){await client.query('UPDATE users SET password_hash=$1,updated_at=now() WHERE id=$2',[encoded,id]);events.push(intent==='reset'?'users.password_reset':'users.password_changed');}
  else if(intent==='delete'){active=false;await client.query('UPDATE users SET active=false,deleted_at=now(),updated_at=now() WHERE id=$1',[id]);events.push('users.deleted');}

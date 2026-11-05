@@ -2,6 +2,7 @@ import 'server-only';
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import {cache} from 'react';
 
 import { getPool } from '@/lib/db/pool';
 import { tokenHash } from '@/lib/security/password.mjs';
@@ -49,7 +50,7 @@ export type AdminUser = {
     | 'EDITOR';
 };
 
-export async function getUser(): Promise<AdminUser | null> {
+export const getUser=cache(async (): Promise<AdminUser | null> => {
   const cookieStore =
     await cookies();
 
@@ -107,12 +108,12 @@ export async function getUser(): Promise<AdminUser | null> {
   } catch (error) {
     console.error(
       '[auth] Falha ao validar sessão:',
-      error,
+      (error as {code?:string}).code||'SESSION_UNAVAILABLE',
     );
 
     return null;
   }
-}
+});
 
 export async function requireUser() {
   const user =

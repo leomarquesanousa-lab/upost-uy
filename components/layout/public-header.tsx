@@ -1,271 +1,187 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { Brand } from '@/components/brand';
-import { HeaderListen } from '@/components/radio/radio-player';
+import styles from './public-header.module.css';
 
-const menu = [
-  ['/', 'Início'],
-  ['/noticias', 'Notícias'],
-  ['/radio', 'Rádio'],
-  ['/programacao', 'Programação'],
-  ['/videos', 'Vídeos'],
-  ['/contato', 'Contato'],
+type Panel = 'navigation' | 'search';
+const groups = [
+  { title: 'Actualidad', links: [['/', 'Inicio'], ['/noticias', 'Últimas noticias'], ['/uruguay', 'Uruguay'], ['/mundo', 'Mundo'], ['/sociedad', 'Sociedad']] },
+  { title: 'Miradas', links: [['/especialistas', 'Especialistas'], ['/opinion', 'Opinión'], ['/investigaciones', 'Investigaciones'], ['/te-explicamos', 'Te explicamos']] },
+  { title: 'Cultura y deporte', links: [['/deportes', 'Deportes'], ['/cultura', 'Cultura']] },
+  { title: 'Para ver y escuchar', links: [['/podcast', 'Podcast'], ['/radios', 'Radios en vivo'], ['/videos', 'Videos']] },
 ];
+const featuredSections = new Set(['/opinion', '/investigaciones', '/especialistas', '/podcast']);
 
-const socialLinks = [
-  {
-    name: 'Facebook',
-    href: 'https://www.facebook.com/biortv.oficial/',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M13.5 22v-8h2.7l.5-3h-3.2V9.1c0-.9.3-1.6 1.6-1.6H17V4.8c-.3 0-1.3-.1-2.5-.1-2.4 0-4 1.4-4 4.2V11H8v3h2.5v8h3Z" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Instagram',
-    href: 'https://www.instagram.com/ritvit26',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M7.5 3h9A4.5 4.5 0 0 1 21 7.5v9A4.5 4.5 0 0 1 16.5 21h-9A4.5 4.5 0 0 1 3 16.5v-9A4.5 4.5 0 0 1 7.5 3Zm0 1.8A2.7 2.7 0 0 0 4.8 7.5v9a2.7 2.7 0 0 0 2.7 2.7h9a2.7 2.7 0 0 0 2.7-2.7v-9a2.7 2.7 0 0 0-2.7-2.7h-9Zm9.45 1.35a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.8A3.2 3.2 0 1 0 12 15.2 3.2 3.2 0 0 0 12 8.8Z" />
-      </svg>
-    ),
-  },
-  {
-    name: 'X',
-    href: 'https://x.com/biortv72344',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M18.9 3H21l-6.55 7.49L22 21h-5.95l-4.66-6.1L6.06 21H4l7-8L2 3h6.1l4.21 5.53L18.9 3Zm-1.04 16.2h1.16L7.46 4.74H6.2L17.86 19.2Z" />
-      </svg>
-    ),
-  },
-  {
-    name: 'YouTube',
-    href: 'https://www.youtube.com/@MultbioRTV',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M21.6 7.2a2.97 2.97 0 0 0-2.1-2.1C17.7 4.5 12 4.5 12 4.5s-5.7 0-7.5.6a2.97 2.97 0 0 0-2.1 2.1c-.6 1.8-.6 4.8-.6 4.8s0 3 .6 4.8a2.97 2.97 0 0 0 2.1 2.1c1.8.6 7.5.6 7.5.6s5.7 0 7.5-.6a2.97 2.97 0 0 0 2.1-2.1c.6-1.8.6-4.8.6-4.8s0-3-.6-4.8ZM10 15.6V8.4l6 3.6-6 3.6Z" />
-      </svg>
-    ),
-  },
-];
+function Icon({ name }: { name: 'menu' | 'search' | 'user' | 'close' | 'arrow' }) {
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {name === 'menu' && <path d="M3 6h18M3 12h18M3 18h18"/>}
+    {name === 'search' && <><circle cx="10.75" cy="10.75" r="6.75"/><path d="m16 16 4.5 4.5"/></>}
+    {name === 'user' && <><circle cx="12" cy="8" r="3.25"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></>}
+    {name === 'close' && <path d="m6 6 12 12M18 6 6 18"/>}
+    {name === 'arrow' && <path d="M5 12h14m-5-5 5 5-5 5"/>}
+  </svg>;
+}
 
-export function PublicHeader({
-  siteName,
-}: {
-  siteName: string;
-}) {
-  const [open, setOpen] =
-    useState(false);
+export function PublicHeader({ date }: { siteName: string; date: string }) {
+  const pathname = usePathname();
+  const [panel, setPanel] = useState<Panel | null>(null);
+  const navigationDialog = useRef<HTMLDialogElement>(null);
+  const searchDialog = useRef<HTMLDialogElement>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
+  const origin = useRef<HTMLElement | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [closing, setClosing] = useState(false);
+  const [query, setQuery] = useState('');
+  const panelsOpen = panel !== null;
 
-  const pathname =
-    usePathname();
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
 
-  return (
-    <>
-      <header className="portal-header">
-        <div className="site-header container">
-          <Link
-            className="header-brand"
-            href="/"
-            aria-label={`${siteName} — início`}
-            onClick={() =>
-              setOpen(false)
-            }
-          >
-            <Brand light />
-          </Link>
+  useLayoutEffect(() => {
+    if (!panelsOpen) return;
+    const body = document.body, root = document.documentElement;
+    const previousOverflow = body.style.overflow;
+    const previousPadding = body.style.getPropertyValue('padding-right');
+    const previousPriority = body.style.getPropertyPriority('padding-right');
+    const previousGutter = root.style.getPropertyValue('scrollbar-gutter');
+    const previousGutterPriority = root.style.getPropertyPriority('scrollbar-gutter');
+    const scrollbarWidth = window.innerWidth - root.clientWidth;
+    // Reserve only an existing scrollbar's space. Overlay-scrollbar browsers
+    // must not acquire a new empty gutter when a panel opens.
+    if (scrollbarWidth > 0 && CSS.supports('scrollbar-gutter: stable')) root.style.setProperty('scrollbar-gutter', 'stable');
+    const reserved = getComputedStyle(root).scrollbarGutter?.includes('stable');
+    if (!reserved && scrollbarWidth > 0) {
+      const padding = parseFloat(getComputedStyle(body).paddingRight) || 0;
+      body.style.setProperty('padding-right', `${padding + scrollbarWidth}px`);
+    }
+    body.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = previousOverflow;
+      if (previousPadding) body.style.setProperty('padding-right', previousPadding, previousPriority);
+      else body.style.removeProperty('padding-right');
+      if (previousGutter) root.style.setProperty('scrollbar-gutter', previousGutter, previousGutterPriority);
+      else root.style.removeProperty('scrollbar-gutter');
+    };
+  }, [panelsOpen]);
 
-          <nav
-            id="portal-navigation"
-            className={`main-nav ${
-              open
-                ? 'is-open'
-                : ''
-            }`}
-            aria-label="Navegação principal"
-          >
-            <div>
-              {menu.map(
-                ([href, label]) => (
-                  <Link
-                    href={href}
-                    key={href}
-                    aria-current={
-                      pathname === href
-                        ? 'page'
-                        : undefined
-                    }
-                    onClick={() =>
-                      setOpen(false)
-                    }
-                  >
-                    {label}
-                  </Link>
-                ),
-              )}
+  function openPanel(next: Panel, trigger: HTMLElement) {
+    clearTimeout(closeTimer.current);
+    origin.current = trigger;
+    navigationDialog.current?.close();
+    searchDialog.current?.close();
+    setClosing(false);
+    const dialog = next === 'navigation' ? navigationDialog.current : searchDialog.current;
+    dialog?.showModal();
+    setPanel(next);
+    if (next === 'search') searchInput.current?.focus();
+  }
+  function finishClose() {
+    navigationDialog.current?.close();
+    searchDialog.current?.close();
+    setPanel(null);
+    setClosing(false);
+    if (origin.current?.isConnected) origin.current.focus({ preventScroll: true });
+  }
+  function closePanels() {
+    if (!navigationDialog.current?.open && !searchDialog.current?.open) return;
+    clearTimeout(closeTimer.current);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finishClose(); return; }
+    setClosing(true);
+    closeTimer.current = setTimeout(finishClose, 200);
+  }
+  function nativeClose() {
+    // A close event from switching panels must not reset the newly opened dialog.
+    if (!navigationDialog.current?.open && !searchDialog.current?.open) {
+      setPanel(null); setClosing(false);
+    }
+  }
+  function backdropClick(event: MouseEvent<HTMLDialogElement>) {
+    if (event.target !== event.currentTarget) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closePanels();
+  }
+  function isActive(href: string) {
+    return pathname === href || (href === '/noticias' && pathname.startsWith('/noticias/'));
+  }
+  function keepFocusInPanel(event: KeyboardEvent<HTMLDialogElement>) {
+    if (event.key !== 'Tab') return;
+    const dialog = event.currentTarget;
+    const controls = Array.from(dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), [tabindex="0"]'))
+      .filter(control => control.getClientRects().length > 0);
+    const first = controls[0], last = controls.at(-1);
+    if (!first || !last) return;
+    if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 
-              <Link
-                href="/busca"
-                className="search-link"
-                aria-label="Buscar no portal"
-                onClick={() =>
-                  setOpen(false)
-                }
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <circle
-                    cx="10"
-                    cy="10"
-                    r="6"
-                  />
+  return <header className={styles.header} data-upost-header>
+    <div className={styles.topbar}>
+      <div className={`container ${styles.topbarInner}`}>
+        <span>{date}</span>
+        <span className={styles.location}>Montevideo, Uruguay</span>
+      </div>
+    </div>
 
-                  <path d="m15 15 5 5" />
-                </svg>
+    <div className={`container ${styles.mainRow}`} data-header-row>
+      <div className={styles.leftControls}>
+        <button type="button" className={styles.control} onClick={event => openPanel('navigation', event.currentTarget)} aria-label="Abrir menú" aria-controls="upost-navigation-panel" aria-expanded={panel === 'navigation'}>
+          <Icon name="menu"/><span className={styles.controlLabel}>Menú</span>
+        </button>
+        <span className={styles.controlDivider} aria-hidden="true"/>
+        <button type="button" className={`${styles.control} ${styles.desktopSearch}`} onClick={event => openPanel('search', event.currentTarget)} aria-label="Buscar noticias" aria-controls="upost-search-panel" aria-expanded={panel === 'search'}>
+          <Icon name="search"/><span className={styles.searchLabel}>Buscar</span>
+        </button>
+      </div>
 
-                <span>
-                  Buscar
-                </span>
-              </Link>
-            </div>
-          </nav>
+      <Link className={styles.logo} href="/" aria-label="UPOST.uy — Inicio" onClick={closePanels} data-header-logo>
+        <Brand variant="header" preload/>
+      </Link>
 
-          <div className="header-actions">
-            <HeaderListen />
+      <div className={styles.rightControls}>
+        <Link className={styles.adminLink} href="/admin"><Icon name="user"/><span>Administración</span></Link>
+        <button type="button" className={`${styles.control} ${styles.mobileSearch}`} onClick={event => openPanel('search', event.currentTarget)} aria-label="Buscar noticias" aria-controls="upost-search-panel" aria-expanded={panel === 'search'}>
+          <Icon name="search"/>
+        </button>
+      </div>
+    </div>
 
-            <Link
-              href="/admin"
-              className="restricted-area-link"
-              aria-label="Área restrita"
-            >
-              <span
-                aria-hidden="true"
-              >
-                🔒
-              </span>
-
-              <span className="restricted-area-label">
-                Área restrita
-              </span>
-            </Link>
-
-            <button
-              className="menu-toggle"
-              aria-label={
-                open
-                  ? 'Fechar menu'
-                  : 'Abrir menu'
-              }
-              aria-expanded={
-                open
-              }
-              aria-controls="portal-navigation"
-              onClick={() =>
-                setOpen(
-                  !open,
-                )
-              }
-            >
-              <span
-                aria-hidden="true"
-              >
-                {open
-                  ? '×'
-                  : '☰'}
-              </span>
-            </button>
-          </div>
+    <dialog id="upost-navigation-panel" ref={navigationDialog} className={styles.navigationDialog} data-closing={closing} aria-labelledby="upost-menu-heading" onKeyDown={keepFocusInPanel} onCancel={event => { event.preventDefault(); closePanels(); }} onClose={nativeClose} onClick={backdropClick}>
+      <div className={styles.panelContent}>
+        <div className={styles.panelHeading}>
+          <div><p className={styles.panelEyebrow}>Secciones</p><h2 id="upost-menu-heading">Explorá UPOST</h2></div>
+          <button type="button" autoFocus className={styles.closeButton} onClick={closePanels} aria-label="Cerrar menú"><Icon name="close"/></button>
         </div>
-      </header>
+        <div className={styles.menuGroups}>
+          {groups.map((group, index) => <nav key={group.title} aria-labelledby={`upost-menu-group-${index}`}>
+            <h3 id={`upost-menu-group-${index}`}>{group.title}</h3>
+            <ul>{group.links.map(([href, label]) => <li key={href}><Link href={href} className={featuredSections.has(href) ? styles.featuredSection : undefined} onClick={closePanels} aria-current={isActive(href) ? 'page' : undefined}>{label}</Link></li>)}</ul>
+          </nav>)}
+        </div>
+        <div className={styles.panelFooter}>
+          <nav aria-label="Institucional"><Link href="/medios-asociados" onClick={closePanels}>Medios asociados</Link><Link href="/contacto" onClick={closePanels}>Contacto</Link></nav>
+          <Link href="/admin" onClick={closePanels} className={styles.panelAdmin}><Icon name="user"/>Administración <span aria-hidden="true">↗</span></Link>
+        </div>
+      </div>
+    </dialog>
 
-      <aside
-        className="biosfera-social-rail"
-        aria-label="Redes sociais"
-      >
-        {socialLinks.map(
-          social => (
-            <Link
-              key={social.name}
-              href={social.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={social.name}
-              title={social.name}
-              className="biosfera-social-link"
-            >
-              {social.icon}
-            </Link>
-          ),
-        )}
-      </aside>
-
-      <style jsx>{`
-        .biosfera-social-rail {
-          position: fixed;
-          top: 50%;
-          right: 18px;
-          z-index: 100;
-          display: flex;
-          flex-direction: column;
-          gap: 9px;
-          transform: translateY(-50%);
-        }
-
-        .biosfera-social-rail
-          :global(.biosfera-social-link) {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 42px;
-          height: 42px;
-          padding: 0;
-          border: 1px solid
-            rgba(255, 255, 255, 0.18);
-          border-radius: 50%;
-          background: #08284f;
-          color: #ffffff;
-          box-shadow:
-            0 5px 18px
-            rgba(0, 24, 58, 0.18);
-          text-decoration: none;
-          transition:
-            transform 160ms ease,
-            background 160ms ease,
-            border-color 160ms ease;
-        }
-
-        .biosfera-social-rail
-          :global(.biosfera-social-link:hover) {
-          transform: translateX(-4px);
-          background: #28c8e8;
-          border-color: #28c8e8;
-          color: #06244b;
-        }
-
-        .biosfera-social-rail
-          :global(.biosfera-social-link svg) {
-          display: block;
-          width: 19px;
-          height: 19px;
-          fill: currentColor;
-        }
-
-        @media (
-          max-width: 1100px
-        ) {
-          .biosfera-social-rail {
-            display: none;
-          }
-        }
-      `}</style>
-    </>
-  );
+    <dialog id="upost-search-panel" ref={searchDialog} className={styles.searchDialog} data-closing={closing} aria-labelledby="upost-search-heading" onKeyDown={keepFocusInPanel} onCancel={event => { event.preventDefault(); closePanels(); }} onClose={nativeClose} onClick={backdropClick}>
+      <div className={styles.panelContent}>
+        <div className={styles.panelHeading}><h2 id="upost-search-heading">Buscar en UPOST</h2><button type="button" className={styles.closeButton} onClick={closePanels} aria-label="Cerrar búsqueda"><Icon name="close"/></button></div>
+        <form className={styles.searchForm} action="/busca" role="search" onSubmit={closePanels}>
+          <label htmlFor="upost-search-input">Buscá por tema, palabra clave o protagonista</label>
+          <div className={styles.searchRow}>
+            <div className={styles.searchField}><Icon name="search"/><input ref={searchInput} id="upost-search-input" type="search" name="q" placeholder="Buscar noticias..." value={query} onChange={event => setQuery(event.target.value)} required maxLength={200} autoFocus autoComplete="off"/>{query && <button className={styles.clearSearch} type="button" aria-label="Limpiar búsqueda" onClick={() => { setQuery(''); searchInput.current?.focus(); }}><Icon name="close"/></button>}</div>
+            <button className={styles.searchSubmit} type="submit" aria-label="Buscar"><span>Buscar</span><Icon name="arrow"/></button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+  </header>;
 }

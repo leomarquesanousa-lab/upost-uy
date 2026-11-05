@@ -1,5 +1,11 @@
 'use client';
-import { useState } from 'react';
-import { settingsAction } from '@/app/admin/operations-actions';
-const labels={SITE_NAME:"Nome do portal",RADIO_STREAM_URL:"URL da transmissão de rádio",LIVE_CAMERA_EMBED_URL:"URL da câmera ao vivo",PORTAL_TIMEZONE:"Fuso horário do portal"};
-export function SettingsForm({values}:{values:{SITE_NAME:string;RADIO_STREAM_URL:string;LIVE_CAMERA_EMBED_URL:string;PORTAL_TIMEZONE:string;CHAT_ENABLED:boolean;WHATSAPP_NUMBER:string}}){const [message,setMessage]=useState(''),[busy,setBusy]=useState(false);return <form className="phase-form" onSubmit={async event=>{event.preventDefault();const f=new FormData(event.currentTarget);setBusy(true);const result=await settingsAction(f);setBusy(false);setMessage(result.error||'Configurações salvas.');}}>{(['SITE_NAME','RADIO_STREAM_URL','LIVE_CAMERA_EMBED_URL','PORTAL_TIMEZONE'] as const).map(key=><label key={key}>{labels[key]}<input name={key} defaultValue={values[key]} required maxLength={key==='SITE_NAME'?120:key==='PORTAL_TIMEZONE'?100:2048}/></label>)}<label>Número do WhatsApp<input name="WHATSAPP_NUMBER" type="tel" autoComplete="tel" defaultValue={values.WHATSAPP_NUMBER} maxLength={80} aria-describedby="whatsapp-help" placeholder="+55 (11) 99999-9999"/></label><small id="whatsapp-help">Inclua o código do país e o DDD. Deixe vazio para ocultar o botão no site.</small><label className="check"><input name="CHAT_ENABLED" type="checkbox" defaultChecked={values.CHAT_ENABLED}/>Chat ativo</label><p>Alterações de fuso afetam a grade. Campanhas já salvas mantêm seus instantes de início e término.</p><p role="status">{message}</p><button className="button" disabled={busy}>Salvar configurações</button></form>;}
+import {useState} from 'react';
+import {settingsAction} from '@/app/admin/operations-actions';
+export function SettingsForm({values}:{values:{SITE_NAME:string;RADIO_STREAM_URL:string;LIVE_CAMERA_EMBED_URL:string;PORTAL_TIMEZONE:string;CHAT_ENABLED:boolean;WHATSAPP_NUMBER:string}}){
+ const [message,setMessage]=useState(''),[busy,setBusy]=useState(false);
+ return <form className="phase-form" onSubmit={async event=>{event.preventDefault();const form=new FormData(event.currentTarget);setBusy(true);try{const result=await settingsAction(form);setMessage(result.error||'Configuración guardada.');}finally{setBusy(false);}}}>
+ <label>Nombre del portal<input name="SITE_NAME" defaultValue={values.SITE_NAME} required maxLength={120}/></label>
+ <label>Zona horaria<input name="PORTAL_TIMEZONE" defaultValue={values.PORTAL_TIMEZONE} required maxLength={100}/></label>
+ <p>Las fechas editoriales se presentan en America/Montevideo. Las radios y fuentes autorizadas se gestionan en Red y fuentes.</p>
+ <p role="status">{message}</p><button className="button" disabled={busy}>{busy?'Guardando…':'Guardar configuración'}</button></form>;
+}

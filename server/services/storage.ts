@@ -26,13 +26,28 @@ const IMAGE_FILENAME_REGEX =
 const VIDEO_FILENAME_REGEX =
   /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.(mp4|webm)$/;
 
+export function imageStorageProvider(): 'local' | 'r2' {
+  if (r2Storage()) return 'r2';
+  if (process.env.NODE_ENV !== 'production') return 'local';
+  requiredR2Storage();
+  return 'r2';
+}
+
 export async function storeImage(
   bytes: Buffer,
 ) {
   const filename =
     `${randomUUID()}.webp`;
 
-  requiredR2Storage();
+  if (imageStorageProvider() === 'local') {
+    await mkdir(uploadDirectory(), { recursive: true });
+    const target = path.join(uploadDirectory(), filename);
+    await writeFile(target, bytes, { flag: 'wx' });
+    try {
+      if (!(await readFile(target)).equals(bytes)) throw new StorageError('No se pudo verificar la imagen guardada.');
+    } catch (error) { await unlink(target).catch(() => {}); throw error; }
+    return `/media/${filename}`;
+  }
   const key = `media/${filename}`;
   await putR2(key, bytes, 'image/webp');
   try {
@@ -95,7 +110,11 @@ export async function discardImage(
     return;
   }
 
-  await discardR2(`media/${filename}`).catch(() => console.error('Falha ao remover mídia do R2.'));
+  if (imageStorageProvider() === 'local') {
+    await unlink(path.join(uploadDirectory(), filename)).catch(() => {});
+  } else {
+    await discardR2(`media/${filename}`).catch(() => console.error('Falha ao remover mídia do R2.'));
+  }
 
 }
 
@@ -213,17 +232,24 @@ export function videoContentType(
 }
 export async function readImage(filename: string) {
   if (!IMAGE_FILENAME_REGEX.test(filename)) return null;
+  // Preserve existing files during the explicitly authorized, later migration.
+  const local = await readLocalImage(filename);
+  if (local) return local;
   // Signed R2 reads do not depend on a public CDN host or cached CDN 404s.
   if (r2Storage() || process.env.NODE_ENV === 'production') {
     const remote = await readR2Object('media/' + filename);
-    if (remote || process.env.NODE_ENV === 'production') return remote;
+    return remote;
   }
-  // Read-only compatibility for legacy development files. New writes always use R2.
-  return readLocalImage(filename);
+  return null;
 }
 
 export async function imageObjectInfo(url: string) {
   if (!url.startsWith('/media/') || !IMAGE_FILENAME_REGEX.test(url.slice(7))) return null;
+  const local = await readLocalImage(url.slice(7));
+  if (local) return { size: local.length, mimeType: 'image/webp' };
+  if (imageStorageProvider() === 'local') {
+    return null;
+  }
   return statR2(url.slice(1));
 }
 

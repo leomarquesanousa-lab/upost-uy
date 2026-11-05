@@ -69,13 +69,6 @@ a:focus-visible,button:focus-visible,input:focus-visible {
   justify-content:space-between
 }
 
-.site-header {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:30px 0
-}
-
 .wordmark {
   font-size:43px;
   font-weight:800;
@@ -89,11 +82,6 @@ a:focus-visible,button:focus-visible,input:focus-visible {
   letter-spacing:4px;
   margin-top:9px;
   font-weight:600
-}
-
-.header-note {
-  font-size:14px;
-  color:var(--muted)
 }
 
 .on-air,.live-label {
@@ -117,28 +105,6 @@ i {
   border-radius:50%;
   background:var(--blue);
   display:inline-block
-}
-
-.main-nav {
-  border-top:1px solid var(--light-blue);
-  border-bottom:1px solid var(--light-blue)
-}
-
-.main-nav .container {
-  display:flex;
-  gap:38px;
-  overflow:auto;
-  white-space:nowrap
-}
-
-.main-nav a {
-  padding:18px 0;
-  font-size:13px;
-  font-weight:600
-}
-
-.main-nav a:hover {
-  color:var(--text-muted)
 }
 
 .public-main {
@@ -652,16 +618,12 @@ h1 em {
   width:calc(100% - 36px)
 }
 
-.topbar .container>span:last-child,.header-note {
+.topbar .container>span:last-child {
   display:none
 }
 
 .topbar {
   font-size:8px
-}
-
-.site-header {
-  padding:24px 0
 }
 
 .wordmark {
@@ -671,10 +633,6 @@ h1 em {
 .on-air {
   font-size:8px;
   padding:10px
-}
-
-.main-nav .container {
-  gap:26px
 }
 
 .hero {

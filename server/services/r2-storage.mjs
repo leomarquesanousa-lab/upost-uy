@@ -13,6 +13,7 @@ export function r2Storage() {
   if (!accessKeyId || !secretAccessKey || !bucket || (!configuredEndpoint && !account) || !publicUrl) {
     throw new StorageError('Configuração R2 incompleta. Verifique as variáveis R2 do servidor.');
   }
+  if (bucket !== 'upost-media') throw new StorageError('O bucket R2 do UPOST deve ser upost-media.');
   const endpoint = configuredEndpoint || `https://${account}.r2.cloudflarestorage.com`;
   for (const value of [endpoint, publicUrl]) {
     let url;
@@ -73,12 +74,13 @@ export async function checkR2Health() {
   } catch { throw new StorageError('Não foi possível acessar o bucket R2.'); }
 }
 
-export async function putR2(key, bytes, contentType) {
+export async function putR2(key, bytes, contentType, { ifAbsent = false } = {}) {
   const storage = r2Storage();
   if (!storage) return false;
   try {
     await storage.client.send(new PutObjectCommand({
       Bucket: storage.bucket, Key: key, Body: bytes, ContentType: contentType,
+      IfNoneMatch: ifAbsent ? '*' : undefined,
       CacheControl: 'public, max-age=31536000, immutable',
     }));
   } catch { throw new StorageError('Não foi possível gravar a mídia no R2.'); }

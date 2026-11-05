@@ -10,7 +10,7 @@ export function GoogleAnalytics({ measurementId }: { measurementId: string }) {
         src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`}
         strategy="afterInteractive"
       />
-      <Script id="biosfera-ga4" strategy="afterInteractive">
+      <Script id="upost-ga4" strategy="afterInteractive">
         {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
@@ -25,7 +25,7 @@ export function GoogleAdSense({ clientId }: { clientId: string }) {
 
   return (
     <Script
-      id="biosfera-adsense"
+      id="upost-adsense"
       async
       strategy="afterInteractive"
       crossOrigin="anonymous"

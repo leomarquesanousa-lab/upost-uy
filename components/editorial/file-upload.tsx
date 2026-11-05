@@ -148,8 +148,8 @@ export function FileUpload({
           typeof result?.error === 'string'
             ? result.error
             : kind === 'video'
-              ? 'Não foi possível enviar o vídeo.'
-              : 'Não foi possível enviar a imagem.',
+              ? 'Não foi possível enviar o video.'
+              : 'Não foi possível enviar a imagen.',
         );
       }
 
@@ -163,8 +163,8 @@ export function FileUpload({
         uploadError instanceof Error
           ? uploadError.message
           : kind === 'video'
-            ? 'Não foi possível enviar o vídeo.'
-            : 'Não foi possível enviar a imagem.',
+            ? 'Não foi possível enviar o video.'
+            : 'Não foi possível enviar a imagen.',
       );
     } finally {
       setBusy(false);
@@ -249,13 +249,13 @@ export function FileUpload({
 
             <span style={styles.subtitle}>
               {kind === 'video'
-                ? 'Envie um vídeo do seu computador'
-                : 'Envie uma imagem do seu computador'}
+                ? 'Envie um video do seu computador'
+                : 'Envie uma imagen do seu computador'}
             </span>
 
             <span style={styles.meta}>
               {helperText}
-              {busy ? ' · Enviando…' : ''}
+              {busy ? ' · Subiendo…' : ''}
             </span>
           </div>
 
@@ -284,7 +284,7 @@ export function FileUpload({
             {kind === 'image' ? (
               <img
                 src={value}
-                alt="Pré-visualização do arquivo enviado"
+                alt="Vista previa do arquivo enviado"
                 style={styles.imagePreview}
               />
             ) : (

@@ -34,15 +34,17 @@ test('editorial images: R2-before-DB, safe failures, import copy, and ghost-refe
   const send = S3Client.prototype.send;
   let state;
   function reset() {
-    state = { events: [], objects: new Map(), records: new Map(), audits: [], putFails: false, headFails: false, dbFails: false, commitFails: false, downloadFails: false };
+    state = { events: [], statements: [], objects: new Map(), records: new Map(), audits: [], putFails: false, headFails: false, dbFails: false, commitFails: false, downloadFails: false };
     const client = { async query(sql,values) {
       state.events.push(sql.split(' ')[0]);
+      state.statements.push(sql);
+      if(sql.startsWith('INSERT INTO source_news_items')&&state.sourceConflict)throw Error('source identifier conflict');
       if (sql === 'COMMIT' && state.commitFails) throw new Error('commit acknowledgement lost');
       if (sql.startsWith('INSERT INTO media_assets')) {
         if (state.dbFails) throw new Error('db failed');
         state.records.set(values[1], { id: values[0], mime_type: 'image/webp', size: values[2] });
       }
-      if (sql.startsWith('INSERT INTO audit_log')) state.audits.push(JSON.parse(values[2]));
+      if (sql.startsWith('INSERT INTO audit_log')) state.audits.push(JSON.parse(values.at(-1)));
       if (sql.startsWith('SELECT id,size,mime_type')) return { rows: state.records.has(values[0]) ? [state.records.get(values[0])] : [] };
       if (sql.startsWith('SELECT active,photo_url')) return { rows: [{ active:true, photo_url:state.authorPhoto || '' }] };
       if (sql.startsWith('SELECT id,active FROM categories')) return { rows: [{ id:userId, active:true }], rowCount:1 };
@@ -52,7 +54,7 @@ test('editorial images: R2-before-DB, safe failures, import copy, and ghost-refe
     state.remoteImage = { bytes: png, mimeType:'image/png', url:'https://source.example/image.png' };
     globalThis.mediaTest = state;
   }
-  const configure = () => Object.assign(process.env, { R2_ACCOUNT_ID:'test',R2_ACCESS_KEY_ID:'test',R2_SECRET_ACCESS_KEY:'test',R2_BUCKET_NAME:'test',R2_ENDPOINT:'https://test.r2.cloudflarestorage.com',R2_PUBLIC_URL:'https://media.example.test' });
+  const configure = () => Object.assign(process.env, { R2_ACCOUNT_ID:'test',R2_ACCESS_KEY_ID:'test',R2_SECRET_ACCESS_KEY:'test',R2_BUCKET_NAME:'upost-media',R2_ENDPOINT:'https://test.r2.cloudflarestorage.com',R2_PUBLIC_URL:'https://media.example.test' });
   S3Client.prototype.send = async function(command) {
     const kind = command.constructor.name;
     state.events.push(kind);
@@ -73,7 +75,10 @@ test('editorial images: R2-before-DB, safe failures, import copy, and ghost-refe
   const input = { bytes:png,filename:'test.png',mimeType:'image/png' };
   try {
     reset(); for (const name of names) delete process.env[name];
-    await assert.rejects(persistEditorialImage(input,userId,{sourceType:'manual'}), /Configure o R2/);
+    const previousMode = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try { await assert.rejects(persistEditorialImage(input,userId,{sourceType:'manual'}), /Configure o R2/); }
+    finally { if (previousMode === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previousMode; }
     assert.deepEqual(state.events,[]);
     configure(); reset(); state.putFails = true;
     await assert.rejects(persistEditorialImage(input,userId,{sourceType:'manual'}), /gravar a mídia/);
@@ -132,6 +137,13 @@ test('editorial images: R2-before-DB, safe failures, import copy, and ghost-refe
     await assert.rejects(saveNews(form,userId), /Imagem ausente/);
     const author = new FormData(); author.set('name','Autor teste'); author.set('photo_url',url);
     await assert.rejects(saveTaxonomy('authors',author,userId), /Imagem ausente/);
+
+    reset();form.set('body','Resumen verificable de la fuente.');form.set('source_url','https://source.example/article');form.set('imported','1');
+    await saveNews(form,userId,{resourceId:userId,identifier:'article-1'});
+    assert.ok(state.statements.findIndex(sql=>sql.startsWith('INSERT INTO source_news_items')) < state.statements.indexOf('COMMIT'),'Source identity and news must commit atomically');
+    reset();state.sourceConflict=true;
+    await assert.rejects(saveNews(form,userId,{resourceId:userId,identifier:'article-1'}),/source identifier conflict/);
+    assert.ok(state.statements.includes('ROLLBACK'));assert.equal(state.statements.includes('COMMIT'),false);
   } finally {
     S3Client.prototype.send = send;
     names.forEach((name,i)=>{ if (previous[i] === undefined) delete process.env[name]; else process.env[name]=previous[i]; });
