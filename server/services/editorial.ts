@@ -6,6 +6,7 @@ import { EditorialError, newsInput, text, slug, uuid, mediaPath } from '@/lib/ed
 import type { TaxonomyKind } from '@/lib/editorial/types';
 import { assertEditorialImage } from './editorial-media';
 import { renderedImagePaths } from '@/lib/editorial/content.mjs';
+import { importBudget, registerAutomaticNews, editorialLifecycle, retentionPolicy } from './news-lifecycle';
 
 async function transaction<T>(operation: (client: PoolClient) => Promise<T>) {
   const client = await getPool().connect();
@@ -68,13 +69,23 @@ export async function saveNews(form: FormData, userId: string, sourceImport?: {r
   const version = Number(text(form, 'version', 12));
   return transaction(async client => {
     const previous = id ? (await client.query('SELECT * FROM news WHERE id=$1 FOR UPDATE', [id])).rows[0] : null;
+    let policy;
+    if(sourceImport){
+      await client.query('SELECT pg_advisory_xact_lock(84201914)');
+      const budget=await importBudget(sourceImport.resourceId,client);
+      if(!budget.ready)throw new EditorialError('La importación automática requiere activar la migración 011.');
+      if(budget.remaining<1)throw new EditorialError('Se alcanzó el límite diario o de noticias activas.');
+      policy=budget.policy;
+    }
     if (!id && form.get('imported') === '1' && input.source_url) {
       await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [input.source_url]);
       const duplicate = await client.query('SELECT id FROM news WHERE source_url=$1 LIMIT 1', [input.source_url]);
       if (duplicate.rowCount) throw new EditorialError('Esta URL ya fue importada. Editá la noticia existente.');
+      if((await retentionPolicy(client)).ready&&(await client.query('SELECT 1 FROM news_origin_tombstones WHERE canonical_url=$1 LIMIT 1',[input.source_url])).rowCount)throw new EditorialError('Esta URL ya fue importada y retirada. No se volverá a importar.');
     }
     if (id && !previous) throw new EditorialError('Noticia no encontrada.');
     if (previous && previous.version !== version) throw new EditorialError('Esta noticia cambió en otra pestaña. Recargá la página antes de editar.');
+    if(previous)await editorialLifecycle(client,id,input.status,input.scheduled_at);
     const author = (await client.query('SELECT active,photo_url FROM authors WHERE id=$1 FOR SHARE', [input.author_id])).rows[0];
     if (!author || (!author.active && previous?.author_id !== input.author_id)) throw new EditorialError('Seleccioná un autor activo.');
     await checkMedia(client, author.photo_url);
@@ -100,6 +111,7 @@ export async function saveNews(form: FormData, userId: string, sourceImport?: {r
     }
     await client.query('INSERT INTO news_categories(news_id,category_id) SELECT $1,unnest($2::uuid[])', [key,categoryIds]);
     if(sourceImport)await client.query('INSERT INTO source_news_items(resource_id,source_identifier,canonical_url,news_id) VALUES($1,$2,$3,$4)',[sourceImport.resourceId,sourceImport.identifier,input.source_url,key]);
+    if(sourceImport&&policy)await registerAutomaticNews(client,key,input.status,input.scheduled_at,policy);
     if (form.get('urgent') === 'on') {
       await client.query("INSERT INTO settings(key,value) VALUES('URGENT_NEWS_ID',$1) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=now()", [key]);
       await audit(client,userId,'news.urgent','news',key);

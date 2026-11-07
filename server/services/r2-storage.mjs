@@ -44,10 +44,10 @@ export function requiredR2Storage() {
   return storage;
 }
 
-export async function statR2(key) {
+export async function statR2(key, { signal } = {}) {
   const storage = requiredR2Storage();
   try {
-    const object = await storage.client.send(new HeadObjectCommand({ Bucket: storage.bucket, Key: key }));
+    const object = await storage.client.send(new HeadObjectCommand({ Bucket: storage.bucket, Key: key }), { abortSignal: signal });
     return { size: object.ContentLength, mimeType: object.ContentType };
   } catch (error) {
     if (error.$metadata?.httpStatusCode === 404) return null;
@@ -118,10 +118,10 @@ export async function readR2(key, request = new Request('https://storage.invalid
   return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
 }
 
-export async function discardR2(key) {
+export async function discardR2(key, { signal } = {}) {
   const storage = r2Storage();
   if (!storage) return;
   try {
-    await storage.client.send(new DeleteObjectCommand({ Bucket: storage.bucket, Key: key }));
+    await storage.client.send(new DeleteObjectCommand({ Bucket: storage.bucket, Key: key }), { abortSignal: signal });
   } catch { throw new Error('Não foi possível remover a mídia do R2.'); }
 }

@@ -11,6 +11,7 @@ import {fetchRemoteFeed,fetchRemotePage} from '@/lib/security/remote-page.mjs';
 import {automationData,synchronizeSources} from '@/server/services/source-automation';
 import {saveTaxonomy} from '@/server/services/editorial';
 import {discoverFeedUrl} from '@/lib/editorial/cover-images.mjs';
+import {retentionPolicy} from '@/server/services/news-lifecycle';
 export async function saveResource(form:FormData):Promise<{error?:string;ok?:boolean}>{
  try{
   const user=await operationsMutation(); const kind=text(form,'kind',20,true);
@@ -35,10 +36,12 @@ export async function saveResource(form:FormData):Promise<{error?:string;ok?:boo
     [id,kind,name,url,text(form,'description',4000),image,text(form,'media_type',100),stream,feed,text(form,'category_slug',180),form.get('active')==='on',order]);
    if(kind!=='radio'&&form.get('automation_present')==='1'){
     const config=automationInput(form);
+    if(!(await retentionPolicy(client)).ready)throw new EditorialError('La configuración de límites requiere activar la migración 011.');
     const category=text(form,'category_slug',180);
     if(config.enabled&&!(await client.query('SELECT id FROM categories WHERE slug=$1 AND active',[category])).rowCount)throw new EditorialError('Seleccioná una categoría activa.');
     if(config.enabled){const page=await retrySource(()=>feed?fetchRemoteFeed(feed):fetchRemotePage(url));sourceEntries(page.html,url,Boolean(feed));}
     await client.query(`INSERT INTO source_automation(resource_id,enabled,interval_minutes,max_items,publication_mode,content_mode,keywords) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(resource_id) DO UPDATE SET enabled=excluded.enabled,interval_minutes=excluded.interval_minutes,max_items=excluded.max_items,publication_mode=excluded.publication_mode,content_mode=excluded.content_mode,keywords=excluded.keywords,next_sync_at=now()`,[id,config.enabled,config.interval_minutes,config.max_items,config.publication_mode,config.content_mode,config.keywords]);
+    await client.query('UPDATE source_automation SET daily_limit=$2 WHERE resource_id=$1',[id,config.daily_limit]);
    }
    await client.query('INSERT INTO audit_log(user_id,action,entity,entity_id,metadata) VALUES($1,$2,$3,$4,$5)',[user.id,'portal_resource.save','portal_resources',id,JSON.stringify({kind})]);
    await client.query('COMMIT');
@@ -47,7 +50,7 @@ export async function saveResource(form:FormData):Promise<{error?:string;ok?:boo
  }catch(error){return {error:error instanceof EditorialError?error.message:(error as {code?:string}).code==='42P01'?'La migración 009 debe aplicarse antes de guardar.':(error as {code?:string}).code==='23505'?'Esta URL ya está registrada.':'No se pudo guardar. Revisá los datos y la conexión.'};}
 }
 export async function syncResource(form:FormData){
- try{await operationsMutation();const id=uuid(text(form,'id',36,true));const result=await synchronizeSources(id);revalidatePath('/','layout');if(result.busy)return {ok:false,message:'Ya hay una sincronización en curso.'};const run=result.results[0];if(!run)return {ok:false,message:'Activá la fuente y guardá su configuración antes de sincronizar.'};return {ok:run.status!=='error',message:`Importadas: ${run.imported}. Duplicadas omitidas: ${run.duplicates}. Errores: ${run.errors}. ${run.message}`.trim()};}
+ try{await operationsMutation();const id=uuid(text(form,'id',36,true));const result=await synchronizeSources(id);revalidatePath('/','layout');if(result.busy)return {ok:false,message:'Ya hay una sincronización en curso.'};const run=result.results[0];if(!run)return {ok:false,message:result.message||'Activá la fuente y guardá su configuración antes de sincronizar.'};return {ok:run.status!=='error',message:`Importadas: ${run.imported}. Duplicadas omitidas: ${run.duplicates}. Errores: ${run.errors}. ${run.message}`.trim()};}
  catch(error){return {ok:false,message:(error as {code?:string}).code==='42P01'?'Aplicá manualmente la migración 010 antes de sincronizar.':'No se pudo sincronizar la fuente.'};}
 }
 export async function configureInitialSources(form?:FormData){

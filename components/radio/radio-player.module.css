@@ -20,30 +20,34 @@
 .card > a { display: inline-block; margin-bottom: 18px; color: #626262; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
 .card button { display: block; font-size: 13px; }
 .card [role=status] { font-size: 12px; margin-bottom: 0; }
-.compactCard { display: flex; flex-direction: column; justify-content: center; gap: 16px; height: 100%; min-width: 0; padding: 20px; border: 1px solid #e9e5e1; border-radius: 10px; background: #faf9f7; color: #171717; }
+.compactCard { display: flex; flex-direction: column; justify-content: center; gap: 8px; height: 100%; min-width: 0; padding: 12px 16px; border: 1px solid #e9e5e1; border-radius: 10px; background: #faf9f7; color: #171717; }
+.stationOptions { display:flex; gap:4px; min-width:0; }
+.compactCard .stationOptions button { flex:1; min-width:0; padding:5px 3px; min-height:28px; border:0; border-bottom:2px solid transparent; background:transparent; color:#626262; font-size:10px; line-height:1.3; border-radius:0; box-shadow:none; }
+.compactCard .stationOptions button[aria-pressed=true] { color:#a71922; border-bottom-color:#a71922; font-weight:700; }
 .compactBrand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .compactBrand > img { width: 44px; height: 44px; object-fit: contain; flex: none; }
 .compactBrand > div { min-width: 0; }
 .compactBrand small { display: inline-flex; align-items: center; gap: 6px; color: #a71922; font-size: 10px; line-height: 1.4; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
 .compactBrand small::before { content: ''; width: 5px; height: 5px; background: #a71922; border-radius: 50%; flex: none; }
-.compactBrand h2 { font: 700 21px/1.2 var(--font-editorial); letter-spacing: -.02em; margin: 5px 0 0; overflow-wrap: normal; }
-.compactSymbol { color: #a71922; font-size: 32px; width: 44px; text-align: center; flex: none; }
+.compactBrand h2 { font: 700 18px/1.2 var(--font-editorial); letter-spacing: -.02em; margin: 3px 0 0; overflow-wrap: anywhere; }
+.compactSymbol { color: #a71922; font-size: 32px; line-height: 1; width: 44px; text-align: center; flex: none; }
 .compactControls { display: grid; grid-template-columns: 44px minmax(0,1fr); align-items: center; gap: 12px; }
 .compactCard .compactPlay { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 8px; background: #a71922; color: #fff; font-size: 17px; box-shadow: none; transition: background 180ms ease; }
 .compactCard .compactPlay:hover { background: #8b141c; }
 .compactConnection { min-width: 0; }
 .compactConnection > span { display: block; font-size: 11px; line-height: 1.4; color: #626262; }
-.compactConnection input { display: block; width: 100%; height: 20px; padding: 0; margin: 4px 0 0; accent-color: #a71922; cursor: pointer; }
+.compactCard .compactConnection input { display: block; width: 100%; height: 20px; min-height: 0; padding: 0; margin: 4px 0 0; accent-color: #a71922; cursor: pointer; }
 .compactCard :is(button,input):focus-visible { outline: 2px solid #a71922; outline-offset: 3px; }
 @media(min-width:641px) and (max-width:1024px) {
-  .compactCard { padding: 14px; gap: 12px; }
+  .compactCard { padding: 8px 10px; gap: 6px; }
   .compactBrand { gap: 8px; }
-  .compactBrand > img { width: 36px; height: 36px; }
-  .compactBrand h2 { font-size: 18px; }
-  .compactBrand small { font-size: 9px; letter-spacing: .04em; }
+  .compactBrand > img { width: 28px; height: 28px; }
+  .compactSymbol { width: 28px; font-size: 24px; }
+  .compactBrand h2 { font-size: 16px; margin: 0; }
+  .compactBrand small { display: none; }
 }
 @media(max-width:640px) {
-  .compactCard { padding: 16px 20px; gap: 10px; }
+  .compactCard { padding: 6px 12px; gap: 4px; }
   .compactBrand > img { width: 40px; height: 40px; }
   .pageWithPlayer { padding-bottom: 142px; }
   .barInner { grid-template-columns: minmax(0,1fr) 44px; gap: 10px 16px; padding: 12px 18px; }

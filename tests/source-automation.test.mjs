@@ -4,6 +4,7 @@ const remote=new URL('../lib/security/remote-page.mjs',import.meta.url).href;
 registerHooks({resolve(specifier,context,next){
  if(specifier==='server-only')return stub('export {}');
  if(specifier==='@/lib/db/pool')return stub('export function getPool(){return globalThis.syncTest.pool}');
+ if(specifier==='./news-lifecycle'&&context.parentURL?.endsWith('/source-automation.ts'))return stub('export async function retentionPolicy(){return {ready:true,policy:{min_sync_minutes:60}}} export async function importBudget(){return {ready:true,remaining:globalThis.syncTest.budget??5}}');
  if(specifier==='@/lib/security/remote-page.mjs')return stub(`export {remoteUrl} from ${JSON.stringify(remote)};export async function fetchRemoteFeed(){return globalThis.syncTest.feed()}export async function fetchRemotePage(url){return globalThis.syncTest.page(url)}`);
  if(specifier==='./import-editorial-image'&&context.parentURL?.endsWith('/source-automation.ts'))return stub('export async function importEditorialImage(url){if(globalThis.syncTest.imageFails||globalThis.syncTest.failedImages?.has(url))throw Error("image unavailable");return "/media/00000000-0000-4000-8000-000000000001.webp"}');
  if(specifier==='./editorial'&&context.parentURL?.endsWith('/source-automation.ts'))return stub('export async function saveNews(form,user,sourceImport){if(!sourceImport?.identifier)throw Error("missing source identity");return globalThis.syncTest.save(form)}export async function saveTaxonomy(){return "author"}');
@@ -54,6 +55,10 @@ test('source unavailable yields an objective error, no news and releases lock',a
 });
 test('scheduler and manual synchronization share a nonblocking lock',async()=>{
  const s=setup();s.locked=true;assert.equal((await synchronizeSources('source')).busy,true);assert.equal(s.saved.length,0);assert.equal(s.locked,true);
+});
+test('daily budget and the effective minimum interval prevent downloads before imports',async()=>{
+ let s=setup();s.budget=0;s.feed=async()=>{throw Error('must not download');};let result=await synchronizeSources();assert.equal(result.results.length,0);assert.equal(s.saved.length,0);
+ s=setup();s.source.interval_minutes=30;s.source.last_sync_at=new Date(Date.now()-30*60000);s.feed=async()=>{throw Error('must not download');};result=await synchronizeSources('source');assert.equal(result.results.length,0);assert.equal(s.saved.length,0);
 });
 test('full automatic import with no photograph is rejected instead of being published',async()=>{
  const s=setup();s.source.content_mode='full';s.imageFails=true;

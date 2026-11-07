@@ -1,5 +1,6 @@
 import 'server-only';
 import { getPool } from '@/lib/db/pool';
+import { withAdditionalRadios } from '@/lib/radio-stations.mjs';
 export type ResourceKind = 'partner' | 'radio' | 'source';
 export type PortalResource = {
  id:string; kind:ResourceKind; name:string; url:string; description:string; image_url:string;
@@ -14,8 +15,9 @@ export function radioStation(item:PortalResource):RadioStation|null {
 }
 export async function portalResources(kind: ResourceKind, admin=false): Promise<{items:PortalResource[];ready:boolean}> {
  try {
-  const result=await getPool().query<PortalResource>('SELECT * FROM portal_resources WHERE kind=$1 '+(admin?'':'AND active ')+'ORDER BY display_order,name,id',[kind]);
-  return {items:result.rows,ready:true};
+  const result=await getPool().query<PortalResource>('SELECT * FROM portal_resources WHERE kind=$1 '+(admin||kind==='radio'?'':'AND active ')+'ORDER BY display_order,name,id',[kind]);
+  const items:PortalResource[]=kind==='radio'?withAdditionalRadios(result.rows):result.rows;
+  return {items:admin?items:items.filter(item=>item.active),ready:true};
  } catch(error) {
   if ((error as {code?:string}).code==='42P01') return {items:[],ready:false};
   throw error;

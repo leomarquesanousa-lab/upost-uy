@@ -102,7 +102,7 @@ async function checkMedia(
   }
 
   const result = await client.query(
-    'SELECT id FROM media_assets WHERE path=$1',
+    'SELECT id FROM media_assets WHERE path=$1 FOR SHARE',
     [mediaUrl],
   );
 

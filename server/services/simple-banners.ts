@@ -13,7 +13,7 @@ export async function saveSimpleBanner(form: FormData, userId: string) {
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
-    const asset = await client.query('SELECT path FROM media_assets WHERE path=$1', [image]);
+    const asset = await client.query('SELECT path FROM media_assets WHERE path=$1 FOR SHARE', [image]);
     if (!asset.rowCount) throw new EditorialError('Seleccioná una imagen subida al portal.');
     if (form.get('id')) {
       const result = await client.query('UPDATE ad_campaigns c SET image_url=$1,updated_at=now() FROM ad_slots s WHERE c.id=$2 AND c.slot_id=s.id AND s.code=ANY($3::text[])', [image, id, topAdSlots.map(slot => slot.code)]);

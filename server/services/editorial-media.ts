@@ -58,6 +58,8 @@ export async function inspectEditorialImage(url: string, db: Pick<PoolClient, 'q
 export async function assertEditorialImage(url: string, db: Pick<PoolClient, 'query'>) {
   if (!url) return;
   try {
+    // Serialize every registered image reference against the cleanup worker's FOR UPDATE.
+    await db.query('SELECT id FROM media_assets WHERE path=$1 FOR SHARE',[url]);
     if (!(await inspectEditorialImage(url, db)).usable) {
       throw new EditorialError(`Imagem ausente no R2 (${url}). Envie novamente antes de salvar.`);
     }

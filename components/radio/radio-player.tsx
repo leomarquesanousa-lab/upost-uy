@@ -1,13 +1,12 @@
 'use client';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
 import type { Slot } from '@/server/services/programming';
 import type { RadioStation } from '@/server/services/portal-resources';
 import styles from './radio-player.module.css';
 export type RadioProgramming = { current: Slot | null; next: Slot[] };
 type Status = 'paused' | 'loading' | 'playing' | 'error';
 export const radioLabels = { paused: 'Lista para escuchar', loading: 'Conectando…', playing: 'Escuchando en vivo', error: 'No se pudo conectar. Intentá nuevamente.' };
-type RadioState = { status: Status; volume: number; toggle: () => void; changeVolume: (value: number) => void; programming: RadioProgramming; station: RadioStation | null; stations: RadioStation[]; playStation: (station: RadioStation) => void };
+type RadioState = { status: Status; volume: number; toggle: () => void; changeVolume: (value: number) => void; programming: RadioProgramming; station: RadioStation | null; stations: RadioStation[]; playStation: (station: RadioStation) => void; selectStation: (station: RadioStation) => void };
 const RadioContext = createContext<RadioState | null>(null);
 
 export function RadioProvider({ streamUrl = '', stations = [], children, initialProgramming = { current: null, next: [] } }: {
@@ -23,8 +22,7 @@ export function RadioProvider({ streamUrl = '', stations = [], children, initial
   const [status, setStatus] = useState<Status>('paused');
   const [volume, setVolume] = useState(.7);
   const programming = initialProgramming;
-  const pathname = usePathname();
-  const showBar = !!station && pathname !== '/';
+  const showBar = !!station;
 
   useEffect(() => {
     if (audio.current) audio.current.volume = .7;
@@ -71,12 +69,16 @@ export function RadioProvider({ streamUrl = '', stations = [], children, initial
     wanted.current = true; retries.current = 0; start();
   }
   function toggle() { if (wanted.current) pause(); else if (selected.current) playStation(selected.current); }
+  function selectStation(next: RadioStation) {
+    if (selected.current?.id === next.id) return;
+    pause(); selected.current = next; setStation(next);
+  }
   function changeVolume(value: number) {
     if (!Number.isFinite(value)) return;
     const next = Math.min(1, Math.max(0, value));
     setVolume(next); if (audio.current) audio.current.volume = next;
   }
-  return <RadioContext.Provider value={{ status, volume, toggle, changeVolume, programming, station, stations, playStation }}>
+  return <RadioContext.Provider value={{ status, volume, toggle, changeVolume, programming, station, stations, playStation, selectStation }}>
     <div className={showBar ? styles.pageWithPlayer : undefined}>{children}</div>
     <audio ref={audio} data-radio-audio preload="none"
       onPlaying={() => { if (wanted.current) { clearTimers(); retries.current = 0; setStatus('playing'); } }}

@@ -1,0 +1,2 @@
+*.pdf binary
+database/migrations/011_news_lifecycle.sql text eol=lf

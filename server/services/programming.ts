@@ -48,6 +48,10 @@ export async function saveProgramming(kind:Kind,form:FormData,userId:string){
  try{await client.query('BEGIN');await client.query('SELECT pg_advisory_xact_lock(84201904)');
  if(deleting){const r=await client.query(`DELETE FROM ${kind} WHERE id=$1`,[id]);if(!r.rowCount)throw new EditorialError('Registro no encontrado.');}
  else{
+ for(const field of ['photo_url','cover_image']){
+  const match=String(values[field]||'').match(/\/media\/[a-f0-9-]{36}\.webp/);
+  if(match&&!(await client.query('SELECT id FROM media_assets WHERE path=$1 FOR SHARE',[match[0]])).rowCount)throw new EditorialError('Imagen no encontrada. Subila nuevamente.');
+ }
  const keys=Object.keys(values),params=Object.values(values);
  if(form.get('id')){const r=await client.query(`UPDATE ${kind} SET ${keys.map((k,i)=>`${k}=$${i+1}`).join(',')},updated_at=now() WHERE id=$${keys.length+1}`,[...params,id]);if(!r.rowCount)throw new EditorialError('Registro no encontrado.');}
  else await client.query(`INSERT INTO ${kind}(id,${keys.join(',')}) VALUES($1,${keys.map((_,i)=>`$${i+2}`).join(',')})`,[id,...params]);

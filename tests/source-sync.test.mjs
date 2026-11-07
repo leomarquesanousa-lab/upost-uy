@@ -35,7 +35,7 @@ test('canonical URL strips trackers, rejects foreign canonical; date and topic e
  assert.equal(eligibleEntry(entry,'Uruguay,Argentina',now),true);assert.equal(eligibleEntry(entry,'deportes',now),false);assert.equal(eligibleEntry({...entry,date:'2026-12-01'},'',now),false);
 });
 test('automation modes validated on backend; no dates, license or link confirmations required',()=>{
- const f=new FormData();assert.deepEqual(automationInput(f),{enabled:false,interval_minutes:30,max_items:3,publication_mode:'review',content_mode:'summary',keywords:''});
+ const f=new FormData();assert.deepEqual(automationInput(f),{enabled:false,interval_minutes:60,daily_limit:5,max_items:3,publication_mode:'review',content_mode:'summary',keywords:''});
  f.set('publication_mode','automatic');f.set('content_mode','full');f.set('automation_enabled','on');assert.equal(automationInput(f).enabled,true);
  f.set('max_items','10000');assert.throws(()=>automationInput(f));
 });

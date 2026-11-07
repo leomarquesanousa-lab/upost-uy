@@ -16,7 +16,8 @@ export function ResourceForm({kind,item,automation,automationReady=false,categor
  {kind!=='radio'&&<><label>RSS / Atom (opcional, detección automática)<input type="url" name="feed_url" defaultValue={item?.feed_url}/></label><label>Categoría de destino<select name="category_slug" defaultValue={item?.category_slug||''}><option value="">Seleccioná una categoría</option>{categories.map(c=><option value={c.slug} key={c.slug}>{c.name}</option>)}</select></label><p>Sin RSS se consulta la página pública de noticias indicada en URL. Las fuentes externas no se presentan como socios oficiales.</p>
  {automationReady&&<fieldset><legend>Automatización</legend><input type="hidden" name="automation_present" value="1"/>
  <label className="check-label"><input type="checkbox" name="automation_enabled" defaultChecked={automation?.enabled}/>Consultar automáticamente</label>
- <label>Frecuencia (minutos)<input type="number" name="interval_minutes" min={15} max={1440} defaultValue={automation?.interval_minutes||30}/></label>
+ <label>Frecuencia (minutos)<input type="number" name="interval_minutes" min={60} max={1440} defaultValue={Math.max(60,automation?.interval_minutes||60)}/></label>
+ <label>Máximo de noticias por día<input type="number" name="daily_limit" min={1} max={10000} defaultValue={automation?.daily_limit||5}/></label>
  <label>Nuevas noticias por consulta<input type="number" name="max_items" min={1} max={10} defaultValue={automation?.max_items||3}/></label>
  <label>Publicación<select name="publication_mode" defaultValue={automation?.publication_mode||'review'}><option value="review">Revisión editorial (borradores)</option><option value="automatic">Publicación automática</option></select></label>
  <label>Contenido<select name="content_mode" defaultValue={automation?.content_mode||'summary'}><option value="summary">Resumen y enlace original</option><option value="full">Texto completo disponible</option></select></label>

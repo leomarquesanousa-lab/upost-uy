@@ -38,6 +38,9 @@ test('editorial images: R2-before-DB, safe failures, import copy, and ghost-refe
     const client = { async query(sql,values) {
       state.events.push(sql.split(' ')[0]);
       state.statements.push(sql);
+      if(sql.includes('to_regclass'))return {rows:[{ready:true}]};
+      if(sql==='SELECT * FROM news_retention_policy WHERE id=true')return {rows:[{global_daily_limit:20,min_sync_minutes:60,publication_hours:48,recovery_days:7,active_limit:500,cleanup_enabled:false}]};
+      if(sql.includes(' AS global,'))return {rows:[{global:0,source:0,active:0,daily_limit:5}]};
       if(sql.startsWith('INSERT INTO source_news_items')&&state.sourceConflict)throw Error('source identifier conflict');
       if (sql === 'COMMIT' && state.commitFails) throw new Error('commit acknowledgement lost');
       if (sql.startsWith('INSERT INTO media_assets')) {

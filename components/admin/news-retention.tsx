@@ -1,0 +1,17 @@
+'use client';
+import {useState,useTransition} from 'react';
+import {useRouter} from 'next/navigation';
+import Link from 'next/link';
+import {retentionSettingsAction,retentionDryRunAction} from '@/app/admin/news-lifecycle-actions';
+import type {RetentionPolicy} from '@/server/services/news-lifecycle';
+export function NewsRetentionForm({policy,ready}:{policy:RetentionPolicy;ready:boolean}) {
+ const [message,setMessage]=useState(''),[pending,start]=useTransition(),router=useRouter();
+ const fields=[['global_daily_limit','Importaciones totales por día',1,10000],['min_sync_minutes','Intervalo mínimo (minutos)',60,10080],['publication_hours','Horas de publicación',1,87600],['recovery_days','Días de recuperación',1,3650],['active_limit','Máximo de noticias automáticas activas',1,100000]] as const;
+ return <section><h2>Límites y conservación</h2>{!ready&&<p role="status">La gestión de vencimientos y Papelera requiere activar la migración 011. No se aplicará automáticamente. Las noticias existentes no vencerán retroactivamente.</p>}
+ <form className="editorial-form" onSubmit={e=>{e.preventDefault();const form=new FormData(e.currentTarget);start(async()=>{const r=await retentionSettingsAction(form);setMessage(r.message);if(r.ok)router.refresh();});}}>
+ <fieldset disabled={!ready||pending}>{fields.map(([key,label,min,max])=><label key={key}>{label}<input name={key} type="number" min={min} max={max} required defaultValue={policy[key]}/></label>)}
+ <label className="check-label"><input name="cleanup_enabled" type="checkbox" defaultChecked={policy.cleanup_enabled}/>Habilitar limpieza definitiva de noticias automáticas vencidas</label>
+ <p>La limpieza definitiva empieza desactivada. No elimina noticias manuales ni protegidas. Los plazos nuevos se aplican a futuras importaciones. Cada fuente tiene su límite diario en Editar configuración.</p>
+ <button className="button">Guardar límites</button></fieldset></form>
+ <button className="button secondary" type="button" disabled={!ready||pending} onClick={()=>start(async()=>{setMessage((await retentionDryRunAction()).message);})}>Simular limpieza</button>{message&&<p role="status">{message}</p>}<p><Link href="/admin/noticias/papelera">Consultar vencidas y Papelera →</Link></p></section>;
+}

@@ -17,7 +17,7 @@ for (const width of [1440, 390]) {
     const player = page.locator('[data-radio-player]');
     const homePlayer = page.locator('[data-home-radio]');
     await expect(homePlayer).toContainText('Radio Mix Artigas');
-    await expect(player).toHaveCount(0);
+    await expect(player).toHaveCount(1);
     await expect(page.locator('[data-radio-station]')).toHaveCount(1);
     await expect(audio).toHaveCount(1);
     expect(await audio.evaluate((node: HTMLAudioElement) => node.paused && !node.getAttribute('src'))).toBe(true);
@@ -44,8 +44,7 @@ for (const width of [1440, 390]) {
     await page.getByRole('dialog', { name: 'Explorá UPOST' }).getByRole('link', { name: 'Radios en vivo', exact: true }).click();
     await expect(page).toHaveURL(/\/radios$/);
     expect(await audio.evaluate(node => node === window.__radioAudio)).toBe(true);
-    await expect(page.locator('[data-radio-station]')).toContainText('Radio Mix Artigas');
-    await expect(page.locator('[data-radio-station]')).toContainText('Radio en vivo');
+    await expect(page.locator('[data-radio-station]').filter({hasText:'Radio Mix Artigas'})).toContainText('Radio en vivo');
     await expect.poll(() => audio.evaluate((node: HTMLAudioElement) => !node.paused)).toBe(true);
     await player.getByRole('button', { name: 'Pausar radio', exact: true }).click();
     expect(await audio.evaluate((node: HTMLAudioElement) => node.paused && !node.getAttribute('src'))).toBe(true);
@@ -63,4 +62,26 @@ test('unavailable stream shows a recoverable connection error without autoplay',
   await expect(player.getByRole('status')).toHaveText('No se pudo conectar. Intentá nuevamente.', { timeout: 25000 });
   await expect(player.getByRole('button', { name: 'Escuchar radio', exact: true })).toBeEnabled();
   expect(await page.locator('[data-radio-audio]').evaluate((node: HTMLAudioElement) => node.paused)).toBe(true);
+});
+
+test('three stations share one audio and changing selection stops playback', async ({ page }) => {
+  await page.goto('/');
+  const audio=page.locator('[data-radio-audio]'), card=page.locator('[data-home-radio]');
+  const choices=card.getByRole('group',{name:'Seleccionar radio'});
+  await expect(choices.getByRole('button')).toHaveCount(3);
+  for(const [choice,name,url] of [
+    ['Avenida','Avenida Ciudadana','https://stm15.painelcast.com:7362/stream'],
+    ['Encuentro Minas','Radio Encuentro Minas','https://servidor31-1.brlogic.com:7034/live?source=website'],
+    ['Mix Artigas','Radio Mix Artigas',stream],
+  ]) {
+    await choices.getByRole('button',{name:choice,exact:true}).click();
+    expect(await audio.evaluate((e:HTMLAudioElement)=>e.paused&&!e.getAttribute('src'))).toBe(true);
+    await expect(card.getByRole('heading',{name,exact:true})).toBeVisible();
+    await card.getByRole('button',{name:'Escuchar '+name,exact:true}).click();
+    await expect.poll(()=>audio.evaluate((e:HTMLAudioElement)=>!e.paused&&e.currentTime>0&&e.readyState>=2),{timeout:25000}).toBe(true);
+    expect(await audio.evaluate((e:HTMLAudioElement)=>e.currentSrc)).toBe(url);
+    await expect(audio).toHaveCount(1);
+  }
+  await card.getByRole('button',{name:'Pausar Radio Mix Artigas',exact:true}).click();
+  expect(await audio.evaluate((e:HTMLAudioElement)=>e.paused)).toBe(true);
 });
