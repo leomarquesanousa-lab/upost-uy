@@ -2,7 +2,8 @@ import 'server-only';
 import {randomUUID} from 'node:crypto';
 import {getPool} from '@/lib/db/pool';
 import {fetchRemoteFeed,fetchRemotePage} from '@/lib/security/remote-page.mjs';
-import {sourceEntries,sourceUrl,canonicalArticle,eligibleEntry,retrySource,sourceSummary,articlePhotographs} from '@/lib/editorial/source-sync.mjs';
+import {sourceEntries,sourceUrl,canonicalArticle,eligibleEntry,retrySource,sourceSummary,articlePhotographs,sourceCategory} from '@/lib/editorial/source-sync.mjs';
+import {sourceFeedUrls,interleaveSourceEntries,isMediosPublicos} from '@/lib/editorial/medios-publicos.mjs';
 import {extractArticle} from '@/lib/editorial/import-article.mjs';
 import {editorialPhoto} from '@/lib/editorial/cover-images.mjs';
 import {importArticleImages} from '@/lib/editorial/import-images.mjs';
@@ -31,7 +32,7 @@ async function importEntry(source:Source,entry:ReturnType<typeof sourceEntries>[
  if(seen.rowCount)return 'duplicate';
  let article,canonical=entry.url;
  try{
-  const page=await retrySource(()=>fetchRemotePage(entry.url,{timeoutMs:8000}));
+  const page=await retrySource(()=>fetchRemotePage(entry.url,{timeoutMs:8000,allowGzip:isMediosPublicos(source.url)}));
   sourceUrl(page.url,source.url);canonical=canonicalArticle(page.html,page.url,source.url);
   if(source.content_mode==='full'&&/"isAccessibleForFree"\s*:\s*(?:false|"false")/i.test(page.html))throw Error('La fuente no ofrece el artículo completo en acceso público. Usá resumen y enlace.');
   article=extractArticle(page.html,entry.url,page.url);
@@ -55,7 +56,7 @@ async function importEntry(source:Source,entry:ReturnType<typeof sourceEntries>[
  if(!media.cover_image)throw Error('No se pudo guardar una fotografía de la noticia. Se intentará otra publicación: '+canonical);
  const incomplete=(source.content_mode==='full'&&media.warnings.length>0)||!summary.complete;
  const author=await taxonomy('authors','fuente-'+source.resource_id,source.name,user);
- const category=(await pool.query('SELECT id FROM categories WHERE slug=$1 AND active',[source.category_slug])).rows[0]?.id;
+ const category=(await pool.query('SELECT id FROM categories WHERE slug=$1 AND active',[sourceCategory(source,entry)])).rows[0]?.id;
  if(!category)throw Error('Seleccioná una categoría activa para esta fuente.');
  const form=new FormData();
  for(const [key,value]of Object.entries({title:title.slice(0,240),slug:slugify(title).slice(0,150)+'-'+randomUUID().slice(0,8),subtitle:article.subtitle||'',excerpt,body:media.body+link,author_id:author,status:source.publication_mode==='automatic'&&!incomplete?'PUBLISHED':'DRAFT',published_at:new Date(time).toISOString(),source_name:source.name,source_url:canonical,canonical_url:canonical,cover_image:media.cover_image||'',cover_alt:media.cover_alt||title,cover_credit:media.cover_credit||'',cover_caption:media.cover_caption||'',imported:'1'}))form.set(key,String(value));
@@ -78,7 +79,7 @@ export async function synchronizeSources(resourceId?:string){
   if(!retention.ready)return {busy:false,results,message:'La importación automática requiere activar la migración 011.'};
   const owner=(await pool.query("SELECT id FROM users WHERE role='OWNER' AND active AND deleted_at IS NULL ORDER BY created_at,id LIMIT 1")).rows[0]?.id;
   if(!owner)throw Error('No hay un administrador activo para la sincronización.');
-  const sources=(await pool.query<Source>(`SELECT a.*,r.name,r.url,r.feed_url,r.category_slug FROM source_automation a JOIN portal_resources r ON r.id=a.resource_id WHERE r.active AND r.kind IN ('partner','source') AND ${resourceId?'r.id=$1':'a.enabled AND a.next_sync_at<=now()'} ORDER BY a.next_sync_at,r.id LIMIT 3`,resourceId?[resourceId]:[])).rows;
+  const sources=(await pool.query<Source>(`SELECT a.*,r.name,r.url,r.feed_url,r.category_slug FROM source_automation a JOIN portal_resources r ON r.id=a.resource_id WHERE r.active AND r.kind IN ('partner','source') AND ${resourceId?'r.id=$1':'a.enabled AND a.next_sync_at<=now()'} ORDER BY a.next_sync_at,r.id LIMIT 20`,resourceId?[resourceId]:[])).rows;
   const deadline=Date.now()+220000;
   for(const source of sources){
    if(Date.now()>deadline)break;
@@ -91,9 +92,10 @@ export async function synchronizeSources(resourceId?:string){
    await pool.query("INSERT INTO source_sync_runs(id,resource_id) VALUES($1,$2)",[run,source.resource_id]);
    let lastTitle='',found=0;
    try{
-    const page=await retrySource(()=>source.feed_url?fetchRemoteFeed(source.feed_url,{timeoutMs:8000}):fetchRemotePage(source.url,{timeoutMs:8000}));
-    const discovered=sourceEntries(page.html,source.url,Boolean(source.feed_url));found=discovered.length;
-    const entries=discovered.filter(e=>eligibleEntry(e,source.keywords));
+    const feeds=sourceFeedUrls(source);
+    const groups=feeds.length?await Promise.all(feeds.map(async url=>{const page=await retrySource(()=>fetchRemoteFeed(url,{timeoutMs:8000,allowGzip:isMediosPublicos(source.url)}));return sourceEntries(page.html,source.url,true);})):[];
+    const discovered=feeds.length>1?interleaveSourceEntries(groups):feeds.length?groups[0]:sourceEntries((await retrySource(()=>fetchRemotePage(source.url,{timeoutMs:8000}))).html,source.url,false);found=discovered.length;
+    const entries=discovered.filter(e=>eligibleEntry(e,source.keywords)&&sourceCategory(source,e));
     if(!entries.length)result.message='Sin publicaciones elegibles en esta consulta.';
     lastTitle=entries[0]?.title||'';
     let attempts=0;

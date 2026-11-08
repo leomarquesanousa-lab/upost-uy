@@ -5,7 +5,7 @@ registerHooks({resolve(specifier,context,next){
  if(specifier==='server-only')return stub('export {}');
  if(specifier==='@/lib/db/pool')return stub('export function getPool(){return globalThis.syncTest.pool}');
  if(specifier==='./news-lifecycle'&&context.parentURL?.endsWith('/source-automation.ts'))return stub('export async function retentionPolicy(){return {ready:true,policy:{min_sync_minutes:60}}} export async function importBudget(){return {ready:true,remaining:globalThis.syncTest.budget??5}}');
- if(specifier==='@/lib/security/remote-page.mjs')return stub(`export {remoteUrl} from ${JSON.stringify(remote)};export async function fetchRemoteFeed(){return globalThis.syncTest.feed()}export async function fetchRemotePage(url){return globalThis.syncTest.page(url)}`);
+ if(specifier==='@/lib/security/remote-page.mjs')return stub(`export {remoteUrl} from ${JSON.stringify(remote)};export async function fetchRemoteFeed(url){return globalThis.syncTest.feed(url)}export async function fetchRemotePage(url){return globalThis.syncTest.page(url)}`);
  if(specifier==='./import-editorial-image'&&context.parentURL?.endsWith('/source-automation.ts'))return stub('export async function importEditorialImage(url){if(globalThis.syncTest.imageFails||globalThis.syncTest.failedImages?.has(url))throw Error("image unavailable");return "/media/00000000-0000-4000-8000-000000000001.webp"}');
  if(specifier==='./editorial'&&context.parentURL?.endsWith('/source-automation.ts'))return stub('export async function saveNews(form,user,sourceImport){if(!sourceImport?.identifier)throw Error("missing source identity");return globalThis.syncTest.save(form)}export async function saveTaxonomy(){return "author"}');
  if(specifier.startsWith('@/')||(specifier.startsWith('.')&&!context.parentURL?.includes('/node_modules/'))){const base=specifier.startsWith('@/')?new URL('../'+specifier.slice(2),import.meta.url):new URL(specifier,context.parentURL);for(const suffix of ['','.ts','.mjs']){const url=new URL(base.href+suffix);if(existsSync(url))return next(url.href,context);}}
@@ -26,7 +26,7 @@ function setup(mode='automatic'){
   if(sql.includes('SELECT a.*,r.name'))return{rows:[s.source]};
   if(sql.includes('SELECT 1 FROM source_news_items'))return{rows:[],rowCount:values.some(v=>s.seen.has(v))?1:0};
   if(sql.includes('FROM authors'))return{rows:[{id:'author',active:true}]};
-  if(sql.includes('FROM categories'))return{rows:[{id:'category'}]};
+  if(sql.includes('FROM categories'))return{rows:[{id:s.categoryIdsBySlug?values[0]:'category'}]};
   if(sql.startsWith('UPDATE source_automation'))s.updates.push(values);
   return{rows:[],rowCount:1};
  },release(){}};
@@ -59,6 +59,18 @@ test('scheduler and manual synchronization share a nonblocking lock',async()=>{
 test('daily budget and the effective minimum interval prevent downloads before imports',async()=>{
  let s=setup();s.budget=0;s.feed=async()=>{throw Error('must not download');};let result=await synchronizeSources();assert.equal(result.results.length,0);assert.equal(s.saved.length,0);
  s=setup();s.source.interval_minutes=30;s.source.last_sync_at=new Date(Date.now()-30*60000);s.feed=async()=>{throw Error('must not download');};result=await synchronizeSources('source');assert.equal(result.results.length,0);assert.equal(s.saved.length,0);
+});
+test('Medios Públicos shares the existing importer, desk mapping, canonical deduplication and global remaining budget',async()=>{
+ const configure=()=>{
+  const s=setup();s.categoryIdsBySlug=true;s.source.url='https://mediospublicos.uy/category/noticias/';s.source.feed_url='https://mediospublicos.uy/category/noticias/feed/';s.source.name='Medios Públicos';s.source.max_items=4;
+  const date=new Date(Date.now()-60000).toISOString();
+  s.feed=async url=>{const tag=new URL(url).pathname.split('/')[2];return {html:`<rss><channel><item><guid>${tag}</guid><title>Noticia verificable ${tag}</title><link>https://mediospublicos.uy/noticia-${tag}/</link><pubDate>${date}</pubDate><description>Resumen fiel de la fuente.</description><category>Noticias</category><category>${tag}</category></item></channel></rss>`};};
+  s.page=async url=>({url,html:`<link rel="canonical" href="${url}"><meta property="og:title" content="Noticia verificable"><meta name="description" content="Resumen fiel de la publicación."><meta property="article:published_time" content="${date}"><div class="thumb"><img src="https://mediospublicos.uy/wp-content/uploads/photo.jpg"></div><p>Texto público de la noticia.</p>`});
+  return s;
+ };
+ let s=configure(),r=await synchronizeSources();assert.equal(r.results[0].imported,4);assert.deepEqual(s.saved.map(n=>n.category_ids),['uruguay','mundo','cultura','deportes']);assert.ok(s.saved.every(n=>n.body.includes('Leé la información original en Medios Públicos')));
+ r=await synchronizeSources();assert.equal(r.results[0].duplicates,4);assert.equal(s.saved.length,4);
+ s=configure();s.budget=1;r=await synchronizeSources();assert.equal(r.results[0].imported,1);assert.equal(s.saved.length,1);
 });
 test('full automatic import with no photograph is rejected instead of being published',async()=>{
  const s=setup();s.source.content_mode='full';s.imageFails=true;

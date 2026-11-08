@@ -6,12 +6,13 @@ import {getPool} from '@/lib/db/pool';
 import {text,uuid,EditorialError,mediaPath} from '@/lib/editorial/validation';
 import {remoteUrl} from '@/lib/security/remote-page.mjs';
 import {assertEditorialImage} from '@/server/services/editorial-media';
-import {automationInput,sourceEntries,initialSources,retrySource} from '@/lib/editorial/source-sync.mjs';
+import {automationInput,sourceEntries,initialSources,automaticSources,retrySource} from '@/lib/editorial/source-sync.mjs';
 import {fetchRemoteFeed,fetchRemotePage} from '@/lib/security/remote-page.mjs';
 import {automationData,synchronizeSources} from '@/server/services/source-automation';
 import {saveTaxonomy} from '@/server/services/editorial';
 import {discoverFeedUrl} from '@/lib/editorial/cover-images.mjs';
 import {retentionPolicy} from '@/server/services/news-lifecycle';
+import {isMediosPublicos} from '@/lib/editorial/medios-publicos.mjs';
 export async function saveResource(form:FormData):Promise<{error?:string;ok?:boolean}>{
  try{
   const user=await operationsMutation(); const kind=text(form,'kind',20,true);
@@ -22,7 +23,7 @@ export async function saveResource(form:FormData):Promise<{error?:string;ok?:boo
   if(stream && remoteUrl(stream).protocol!=='https:')throw new EditorialError('El stream debe usar HTTPS.');
   if(feed)remoteUrl(feed);
   if(kind!=='radio'&&!feed&&form.get('automation_enabled')==='on'){
-   const page=await retrySource(()=>fetchRemotePage(url));feed=discoverFeedUrl(page.html,page.url)||'';
+   const page=await retrySource(()=>fetchRemotePage(url,{allowGzip:isMediosPublicos(url)}));feed=discoverFeedUrl(page.html,page.url)||'';
   }
   const order=Number(text(form,'display_order',10)||0);
   if(!Number.isSafeInteger(order)||Math.abs(order)>100000)throw new EditorialError('Orden inválido.');
@@ -39,7 +40,7 @@ export async function saveResource(form:FormData):Promise<{error?:string;ok?:boo
     if(!(await retentionPolicy(client)).ready)throw new EditorialError('La configuración de límites requiere activar la migración 011.');
     const category=text(form,'category_slug',180);
     if(config.enabled&&!(await client.query('SELECT id FROM categories WHERE slug=$1 AND active',[category])).rowCount)throw new EditorialError('Seleccioná una categoría activa.');
-    if(config.enabled){const page=await retrySource(()=>feed?fetchRemoteFeed(feed):fetchRemotePage(url));sourceEntries(page.html,url,Boolean(feed));}
+    if(config.enabled){const options={allowGzip:isMediosPublicos(url)};const page=await retrySource(()=>feed?fetchRemoteFeed(feed,options):fetchRemotePage(url,options));sourceEntries(page.html,url,Boolean(feed));}
     await client.query(`INSERT INTO source_automation(resource_id,enabled,interval_minutes,max_items,publication_mode,content_mode,keywords) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(resource_id) DO UPDATE SET enabled=excluded.enabled,interval_minutes=excluded.interval_minutes,max_items=excluded.max_items,publication_mode=excluded.publication_mode,content_mode=excluded.content_mode,keywords=excluded.keywords,next_sync_at=now()`,[id,config.enabled,config.interval_minutes,config.max_items,config.publication_mode,config.content_mode,config.keywords]);
     await client.query('UPDATE source_automation SET daily_limit=$2 WHERE resource_id=$1',[id,config.daily_limit]);
    }
@@ -56,12 +57,12 @@ export async function syncResource(form:FormData){
 export async function configureInitialSources(form?:FormData){
  const user=await operationsMutation(),state=await automationData();
  const requested=form?.get('initial_source');
- const selected=requested?initialSources.filter(s=>s.url===requested):initialSources;
+ const selected=requested?automaticSources.filter(s=>s.url===requested):initialSources;
  if(!selected.length)return {ok:false,message:'Fuente inicial inválida.'};
  const messages=[];
  for(const source of selected){
   try{
-   const page=await retrySource(()=>source.feed?fetchRemoteFeed(source.feed):fetchRemotePage(source.url));
+   const page=await retrySource(()=>source.feed?fetchRemoteFeed(source.feed,{allowGzip:isMediosPublicos(source.url)}):fetchRemotePage(source.url));
    if(!sourceEntries(page.html,source.url,Boolean(source.feed)).length)throw Error('Sin noticias verificables.');
    let category=(await getPool().query('SELECT id FROM categories WHERE slug=$1',[source.category])).rows[0];
    if(!category){const f=new FormData();f.set('name',source.category==='tecnologia'?'Tecnología':source.category==='mundo'?'Mundo':'Uruguay');f.set('slug',source.category);f.set('active','on');category={id:await saveTaxonomy('categories',f,user.id)};}

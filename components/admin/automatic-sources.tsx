@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {portalResources} from '@/server/services/portal-resources';
 import {automationData} from '@/server/services/source-automation';
 import {taxonomyList} from '@/server/repositories/editorial';
-import {initialSources} from '@/lib/editorial/source-sync.mjs';
+import {automaticSources as initialSources} from '@/lib/editorial/source-sync.mjs';
 import {ResourceForm} from './resource-form';
 import {SourceControls} from './source-controls';
 import styles from './automatic-sources.module.css';
@@ -24,7 +24,7 @@ export async function AutomaticSources(){
   <div className={styles.toolbar}><SourceControls/><Link href="/admin/noticias?status=DRAFT">Revisar noticias importadas →</Link></div>
   <div className={styles.grid}>{entries.map(({preset,item})=>{
    const sync=automation.items.find(a=>a.resource_id===item?.id),name=item?.name||preset?.name||'',url=item?.url||preset?.url||'';
-   const category=categories.find(c=>c.slug===(item?.category_slug||preset?.category))?.name||({mundo:'Mundo',uruguay:'Uruguay',tecnologia:'Tecnología'} as Record<string,string>)[preset?.category||'']||'Sin categoría';
+   const category=(preset&&'categoryLabel' in preset?String(preset.categoryLabel):'')||categories.find(c=>c.slug===(item?.category_slug||preset?.category))?.name||({mundo:'Mundo',uruguay:'Uruguay',tecnologia:'Tecnología'} as Record<string,string>)[preset?.category||'']||'Sin categoría';
    return <article key={item?.id||url} className={styles.card} data-automatic-source={preset?.url||url}>
     {item?.image_url&&<Image src={item.image_url} width={120} height={40} alt=""/>}
     <span className={styles.badge}>{item?'Registrada':'Pendiente de registro'}</span><h3>{name}</h3>
