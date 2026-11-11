@@ -343,7 +343,8 @@ export function VideoForm({
 
       <hr />
 
-      <h2>SEO</h2>
+      <details><summary>Opciones avanzadas de buscadores</summary>
+      <p>El título y la descripción se generan automáticamente al guardar. Los textos personalizados son opcionales.</p>
 
       <label>
         Título SEO
@@ -352,22 +353,23 @@ export function VideoForm({
           name="seo_title"
           maxLength={180}
           defaultValue={video?.seo_title || ''}
-          placeholder="Se vazio, será usado o título do vídeo"
+          placeholder="Se genera automáticamente"
         />
       </label>
 
       <label>
-        Descrição SEO
+        Descripción para buscadores
 
         <textarea
           name="seo_description"
           maxLength={320}
           rows={3}
           defaultValue={video?.seo_description || ''}
-          placeholder="Descrição para mecanismos de busca"
+          placeholder="Se genera automáticamente"
         />
       </label>
 
+      </details>
       {error && (
         <p
           className="form-error"

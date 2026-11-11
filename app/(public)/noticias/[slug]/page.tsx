@@ -7,7 +7,8 @@ import { notFound } from 'next/navigation';
 import { publicNewsBySlug, listNews } from '@/server/repositories/editorial';
 import { getSettings } from '@/server/services/settings';
 import { renderBody } from '@/lib/editorial/content.mjs';
-import { articleUrl, siteUrl, jsonLd } from '@/lib/editorial/seo';
+import { articleUrl, siteUrl, jsonLd,newsMetadata,sharingImage } from '@/lib/editorial/seo';
+import {automaticSeo} from '@/lib/editorial/automatic-seo.mjs';
 import { NewsCard } from '@/components/editorial/news-card';
 import { Share } from '@/components/editorial/share';
 import { brandAssets } from '@/lib/brand';
@@ -21,13 +22,7 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const news = await publicNewsBySlug((await params).slug);
   if (!news) return { title: 'Noticia no encontrada', robots: { index:false,follow:false } };
-  const title = news.seo_title || news.title;
-  const description = news.seo_description || news.excerpt || news.subtitle || news.title;
-  const images = news.cover_image ? [{ url:`${siteUrl()}${news.cover_image}`,alt:news.cover_alt }] : [];
-  return { title,description,alternates:{canonical:articleUrl(news)},
-    openGraph:{type:'article',title,description,url:articleUrl(news),images,publishedTime:news.visible_at?.toISOString(),modifiedTime:news.updated_at.toISOString(),authors:[news.author_name],locale:'es_UY'},
-    twitter:{card:news.cover_image ? 'summary_large_image' : 'summary',title,description,images},
-  };
+  return newsMetadata(news);
 }
 export default async function Page({ params }: Props) {
   const news = await publicNewsBySlug((await params).slug);
@@ -36,10 +31,10 @@ export default async function Page({ params }: Props) {
   const category = news.categories.find(c=>c.active);
   const related = await listNews({ category:category?.slug,exclude:news.id,limit:3 });
   const structured = [
-    { '@context':'https://schema.org','@type':'NewsArticle',headline:news.title,description:news.excerpt || news.subtitle,
+    { '@context':'https://schema.org','@type':'NewsArticle',headline:news.title,description:automaticSeo(news).seo_description,
       datePublished:news.visible_at?.toISOString(),dateModified:news.updated_at.toISOString(),mainEntityOfPage:articleUrl(news),
-      ...(news.cover_image ? {image:[`${siteUrl()}${news.cover_image}`]} : {}),
-      author:{'@type':'Person',name:news.author_name},publisher:{'@type':'Organization',name:settings.siteName,url:siteUrl(),logo:{'@type':'ImageObject',url:`${siteUrl()}${brandAssets.logo}`}},
+      ...(sharingImage(news.cover_image) ? {image:[sharingImage(news.cover_image)]} : {}),
+      ...(news.author_name?{author:{'@type':'Person',name:news.author_name}}:{}),publisher:{'@type':'Organization',name:settings.siteName,url:siteUrl(),logo:{'@type':'ImageObject',url:`${siteUrl()}${brandAssets.logo}`}},
     },
     { '@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[
       {'@type':'ListItem',position:1,name:'Inicio',item:siteUrl()},

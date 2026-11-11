@@ -72,15 +72,16 @@ export function NewsForm({ item, imported, authors, categories, importPending = 
       <label>Fecha de publicación (Uruguay)<input name="published_at" type="datetime-local" defaultValue={utcInput(item?.published_at || imported?.original_published_at)} /></label>
       <label>Programación (Uruguay)<input name="scheduled_at" type="datetime-local" required={status==='SCHEDULED'} defaultValue={utcInput(item?.scheduled_at)} /></label>
       <label className="check-label"><input name="featured" type="checkbox" defaultChecked={item?.featured} /> Destacar en portada</label>
+      <label className="check-label"><input name="home_lead" type="checkbox" defaultChecked={item?.home_lead} /> Noticia principal de la portada (una sola)</label>
       <label className="check-label"><input name="urgent" type="checkbox" defaultChecked={item?.urgent} /> Último momento (reemplaza el aviso anterior)</label>
       <p className="muted">Para retirar una noticia del portal, guardala como Archivada. Se conserva el historial.</p>
     </fieldset>
-    <fieldset><legend>SEO</legend>
+    <details><summary>Opciones avanzadas de buscadores y enlaces</summary><p>El título y la descripción se generan automáticamente al guardar. Completá estos campos solo para usar un texto personalizado.</p><fieldset><legend>Personalización opcional</legend>
       <label>Título SEO<input name="seo_title" maxLength={120} defaultValue={item?.seo_title} /></label>
       <label>Descripción SEO<textarea aria-label="Descripción SEO" name="seo_description" maxLength={300} rows={3} defaultValue={item?.seo_description} /></label>
       <label>URL canónica<input name="canonical_url" type="url" maxLength={2048} defaultValue={item?.canonical_url || imported?.canonical_url} placeholder="Opcional: URL original del artículo" /></label>
       <small>Si se deja vacío, se usan el título, el resumen y la URL de la noticia.</small>
-    </fieldset>
+    </fieldset></details>
     <fieldset><legend>Fuente</legend><label>Nombre de la fuente<input name="source_name" maxLength={200} defaultValue={item?.source_name || imported?.source_name} /></label><label>URL original<input name="source_url" type="url" maxLength={2048} defaultValue={item?.source_url || imported?.source_url} /></label><small>El origen se puede editar y se muestra al publicar.</small></fieldset>
     {error && <p className="form-error" role="alert">{error}</p>}
     <div className="form-actions"><button className="button" disabled={pending || uploadsPending > 0 || importPending}>{pending ? 'Guardando…' : uploadsPending > 0 ? 'Subiendo imagen…' : 'Guardar noticia'}</button>

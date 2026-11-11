@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-editorial-preview/
 /out/
 
 # production
@@ -40,6 +41,7 @@ yarn-error.log*
 /storage/logs/
 /.test-postgres/
 /playwright-report/
+/artifacts/
 
 # Local diagnostics; not required for installation or production.
 /check-upost-db.mjs

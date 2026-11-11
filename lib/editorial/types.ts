@@ -10,4 +10,9 @@ export type News = {
   created_at: Date; updated_at: Date; version: number; categories: Taxonomy[];
   source_name: string; source_url: string;
   urgent?: boolean;
+  home_lead?: boolean;
 };
+export type NewsCardData=Pick<News,'id'|'title'|'slug'|'cover_image'|'cover_alt'|'categories'|'excerpt'|'subtitle'|'source_name'|'author_name'|'visible_at'|'featured'|'urgent'|'home_lead'>;
+export function toNewsCardData({id,title,slug,cover_image,cover_alt,categories,excerpt,subtitle,source_name,author_name,visible_at,featured,urgent,home_lead}:News):NewsCardData{
+ return {id,title,slug,cover_image,cover_alt,categories,excerpt,subtitle,source_name,author_name,visible_at,featured,urgent,home_lead};
+}

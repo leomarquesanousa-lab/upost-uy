@@ -6,7 +6,8 @@ import { EditorialError, newsInput, text, slug, uuid, mediaPath } from '@/lib/ed
 import type { TaxonomyKind } from '@/lib/editorial/types';
 import { assertEditorialImage } from './editorial-media';
 import { renderedImagePaths } from '@/lib/editorial/content.mjs';
-import { importBudget, registerAutomaticNews, editorialLifecycle, retentionPolicy } from './news-lifecycle';
+import {automaticSeo} from '@/lib/editorial/automatic-seo.mjs';
+import { importBudget, registerAutomaticNews, registerNewsRetention, editorialLifecycle, retentionPolicy } from './news-lifecycle';
 
 async function transaction<T>(operation: (client: PoolClient) => Promise<T>) {
   const client = await getPool().connect();
@@ -85,7 +86,8 @@ export async function saveNews(form: FormData, userId: string, sourceImport?: {r
     }
     if (id && !previous) throw new EditorialError('Noticia no encontrada.');
     if (previous && previous.version !== version) throw new EditorialError('Esta noticia cambió en otra pestaña. Recargá la página antes de editar.');
-    if(previous)await editorialLifecycle(client,id,input.status,input.scheduled_at);
+    Object.assign(input,automaticSeo(previous,input,sourceImport?{}:{seo_title:form.has('seo_title')?input.seo_title:undefined,seo_description:form.has('seo_description')?input.seo_description:undefined}));
+    if(previous)await editorialLifecycle(client,id,input.status,input.scheduled_at,input.published_at);
     const author = (await client.query('SELECT active,photo_url FROM authors WHERE id=$1 FOR SHARE', [input.author_id])).rows[0];
     if (!author || (!author.active && previous?.author_id !== input.author_id)) throw new EditorialError('Seleccioná un autor activo.');
     await checkMedia(client, author.photo_url);
@@ -111,7 +113,14 @@ export async function saveNews(form: FormData, userId: string, sourceImport?: {r
     }
     await client.query('INSERT INTO news_categories(news_id,category_id) SELECT $1,unnest($2::uuid[])', [key,categoryIds]);
     if(sourceImport)await client.query('INSERT INTO source_news_items(resource_id,source_identifier,canonical_url,news_id) VALUES($1,$2,$3,$4)',[sourceImport.resourceId,sourceImport.identifier,input.source_url,key]);
-    if(sourceImport&&policy)await registerAutomaticNews(client,key,input.status,input.scheduled_at,policy);
+    if(sourceImport&&policy)await registerAutomaticNews(client,key,input.status,input.scheduled_at,policy,input.published_at);
+    else if(!previous || (!previous.published_at && previous.status==='DRAFT'))await registerNewsRetention(client,key,input.status,input.scheduled_at,(await retentionPolicy(client)).policy,false,input.published_at);
+    if (!sourceImport && form.get('home_lead') === 'on') {
+      await client.query("INSERT INTO settings(key,value) VALUES('HOME_LEAD_NEWS_ID',$1) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=now()",[key]);
+      await audit(client,userId,'news.home_lead','news',key);
+    } else if (!sourceImport) {
+      await client.query("UPDATE settings SET value='',updated_at=now() WHERE key='HOME_LEAD_NEWS_ID' AND value=$1",[key]);
+    }
     if (form.get('urgent') === 'on') {
       await client.query("INSERT INTO settings(key,value) VALUES('URGENT_NEWS_ID',$1) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=now()", [key]);
       await audit(client,userId,'news.urgent','news',key);

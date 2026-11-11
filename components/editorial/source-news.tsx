@@ -3,8 +3,9 @@ import Link from 'next/link';
 import {initialSources} from '@/lib/editorial/source-sync.mjs';
 import {sourceNewsHighlights} from '@/server/repositories/editorial';
 import styles from './source-news.module.css';
-export async function SourceNews(){
- const items=await sourceNewsHighlights(initialSources.map(s=>s.url));
+import type {News} from '@/lib/editorial/types';
+export async function SourceNews({exclude=[],items:supplied}:{exclude?:string[];items?:News[]}={}){
+ const items=supplied??await sourceNewsHighlights(initialSources.map(s=>s.url),exclude);
  if(!items.length)return null;
  return <section className={styles.section} aria-label="Noticias de nuestras fuentes" data-source-news>
   <div className={styles.heading}><h2>Noticias de nuestras fuentes</h2><Link href="/medios-asociados">Todas las fuentes →</Link></div>

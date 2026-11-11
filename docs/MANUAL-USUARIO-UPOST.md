@@ -281,9 +281,9 @@ Estas herramientas requieren la migración 011, que debe revisar y aplicar el re
 
 ### Definir cuánto tiempo se publican
 
-1. En **Límites y conservación**, completá **Horas de publicación** y **Días de recuperación**. Los valores iniciales son 48 horas y siete días.
-2. Pulsá **Guardar límites**. Los nuevos plazos se asignan a futuras importaciones, no a las noticias anteriores.
-3. El plazo comienza con la primera publicación en UPOST, no con una fecha antigua del medio original. Un borrador no empieza a vencer hasta su publicación; una noticia programada usa su momento de publicación previsto.
+1. En **Límites y conservación**, la publicación está fijada en **15 días completos (360 horas)**. Los **Días de recuperación** son siete por defecto y se conservan como ajuste independiente.
+2. La política requiere las migraciones 011 y 012. Se aplica a nuevas publicaciones manuales y automáticas, sin incorporar noticias anteriores ni retrofechadas al marco de activación.
+3. El plazo se cuenta desde la fecha de publicación de la noticia. Un borrador no empieza a vencer hasta publicarse; una noticia programada usa su fecha prevista. Una edición posterior no reinicia el plazo.
 4. Al vencer, la nota deja de aparecer en el inicio, las categorías, la búsqueda y el sitemap. Su dirección ya no muestra el contenido público.
 5. Durante la recuperación podés encontrarla en **Papelera y noticias vencidas**. La retirada pública no depende de que alguien abra el panel.
 
@@ -291,10 +291,10 @@ Estas herramientas requieren la migración 011, que debe revisar y aplicar el re
 
 1. Abrí la edición de la noticia.
 2. Pulsá **Mantener permanentemente**. Esta marca impide el vencimiento automático y la limpieza.
-3. Una edición humana de una noticia automática también activa **Protección editorial**: la rutina no la elimina definitivamente. Para mantenerla publicada sin vencimiento, marcá además la permanencia.
-4. Solo un administrador o propietario puede usar **Retirar protección editorial**. La permanencia se cambia con **Quitar permanencia**; al retirarla en una noticia automática se otorga un nuevo plazo de publicación antes de vencer.
+3. Una edición humana de una noticia automática también activa **Protección editorial**: la rutina no la retira ni la elimina. Las noticias destacadas o elegidas como principal tampoco vencen mientras estén fijadas.
+4. Solo un administrador o propietario puede usar **Retirar protección editorial**. Quitar permanencia no modifica la fecha original de publicación ni renueva el plazo.
 
-Las noticias creadas manualmente nunca se eliminan por la rutina automática. Las noticias que se envían manualmente a Papelera tampoco son eliminadas por esa rutina: su eliminación definitiva requiere una decisión administrativa explícita.
+Las nuevas noticias manuales y automáticas incluidas en la política pasan a Papelera después de 15 días completos. La rutina concede el período completo de recuperación desde el envío a Papelera antes de permitir una limpieza definitiva habilitada. Restaurar crea un borrador protegido. Las noticias enviadas manualmente a Papelera conservan la eliminación administrativa explícita. Los archivos compartidos o sin prueba de propiedad R2 no se eliminan.
 
 ### Eliminar y restaurar
 

@@ -1,6 +1,5 @@
-.home { min-width: 0; }
-:global(.public-main):has(> .home) { padding-top: 18px; }
-
+﻿.home { min-width:0; --rule:#e2e2e2; }
+:global(.public-main):has(> .home) { padding-top:18px; }
 .leadGrid { display:grid; grid-template-columns:minmax(0,1.3fr) repeat(2,minmax(0,1fr)); gap:18px; align-items:start; }
 .leadGrid > :global(.featured-news) { grid-row:span 3; margin:0; }
 .singleStory { grid-template-columns:minmax(0,740px); justify-content:center; }
@@ -10,10 +9,18 @@
 .home .moreGrid.moreGrid { grid-template-columns:repeat(4,minmax(0,1fr)); }
 .moreLink { display:block; width:fit-content; margin:12px 0 0 auto; color:#b91c1c; font-size:13px; }
 .categoryList { display:grid; gap:14px; }
+.categoryGroup { margin-top:24px; padding-top:16px; border-top:1px solid #e2e2e2; }
+.categoryGroup:first-of-type { margin-top:16px; padding-top:0; border-top:0; }
+.categoryGroup :global(.section-heading) h3 { margin:0; font-size:20px; line-height:1.2; }
 .home .categoryList.categoryList > article { grid-template-columns:100px minmax(0,1fr); width:100%; margin:0; }
 @media(max-width:1000px) { .home .moreGrid.moreGrid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:640px) { .home .moreGrid.moreGrid { grid-template-columns:minmax(0,1fr); } }
 @media(max-width:1100px) { .leadGrid { grid-template-columns:repeat(2,minmax(0,1fr)); } .leadGrid > :global(.featured-news) { grid-row:auto; grid-column:1/-1; } }
 @media(max-width:640px) { .leadGrid { grid-template-columns:minmax(0,1fr); gap:16px; } .home :global(.news-grid) { gap:18px; } }
-.home .directory { grid-template-columns: repeat(2,minmax(0,1fr)); }
-@media(max-width:640px) { .home .directory { grid-template-columns: minmax(0,1fr); } }
+.home .directory { grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media(max-width:640px) { .home .directory { grid-template-columns:minmax(0,1fr); } }
+.home .moreGrid.worldGrid,.home .moreGrid.sportsGrid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.home .moreGrid.sportsPair { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.home .moreGrid.sportsSingle { grid-template-columns:minmax(0,1fr); }
+@media(max-width:1000px) { .home .moreGrid.worldGrid,.home .moreGrid.sportsGrid { grid-template-columns:repeat(2,minmax(0,1fr)); } .home .moreGrid.sportsSingle { grid-template-columns:minmax(0,1fr); } }
+@media(max-width:640px) { .home .moreGrid.worldGrid,.home .moreGrid.sportsGrid { grid-template-columns:minmax(0,1fr); } }

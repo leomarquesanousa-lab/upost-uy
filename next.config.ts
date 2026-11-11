@@ -2,6 +2,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.UPOST_EDITORIAL_PREVIEW === '1' ? '.next-editorial-preview' : '.next',
   async redirects() {
     return [
       {source:'/radio',destination:'/radios',permanent:false},

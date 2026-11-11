@@ -4,6 +4,8 @@ import { randomUUID } from 'node:crypto';
 import type { PoolClient } from 'pg';
 
 import { getPool } from '@/lib/db/pool';
+import {automaticSeo} from '@/lib/editorial/automatic-seo.mjs';
+import {cache} from 'react';
 import {
   EditorialError,
   mediaPath,
@@ -288,7 +290,13 @@ export async function videoById(
   return result.rows[0] ?? null;
 }
 
-export async function publishedVideos() {
+export const publishedVideoById=cache(async(id:string)=>{
+ if(!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id))return null;
+ return (await getPool().query<VideoRecord>("SELECT * FROM videos WHERE id=$1 AND deleted_at IS NULL AND status='PUBLISHED' AND (published_at IS NULL OR published_at<=now())",[id])).rows[0]||null;
+});
+export async function sitemapVideos(){return (await getPool().query<{id:string;updated_at:Date}>("SELECT id,updated_at FROM videos WHERE deleted_at IS NULL AND status='PUBLISHED' AND (published_at IS NULL OR published_at<=now()) ORDER BY published_at DESC NULLS LAST,id LIMIT 49000")).rows;}
+
+export async function publishedVideos({home=false}:{home?:boolean}={}) {
   const result =
     await getPool().query<VideoRecord>(
       `
@@ -316,9 +324,10 @@ export async function publishedVideos() {
             OR published_at <= now()
           )
         ORDER BY
-          featured DESC,
+          ${home?'':'featured DESC,'}
           published_at DESC NULLS LAST,
-          created_at DESC
+          created_at DESC,id
+        ${home?'LIMIT 3':''}
       `,
     );
 
@@ -388,13 +397,13 @@ export async function saveVideo(
   const featured =
     form.get('featured') === 'on';
 
-  const seoTitle = text(
+  let seoTitle = text(
     form,
     'seo_title',
     180,
   );
 
-  const seoDescription = text(
+  let seoDescription = text(
     form,
     'seo_description',
     320,
@@ -468,6 +477,9 @@ export async function saveVideo(
 
       const key =
         id || randomUUID();
+
+      const seo=automaticSeo(previous,{title,description},{seo_title:form.has('seo_title')?seoTitle:undefined,seo_description:form.has('seo_description')?seoDescription:undefined});
+      seoTitle=seo.seo_title;seoDescription=seo.seo_description;
 
       if (previous) {
         await client.query(
