@@ -200,11 +200,11 @@ export async function runNewsRetention({dryRun=true,task='all'}:{dryRun?:boolean
     }
    }else result.message='Limpieza definitiva desactivada; la expiración sigue funcionando.';
   }
-  // Bounded prospective orphan sweep, with positive manual/imported R2 ownership proof.
+  // Only imported orphans are swept. Manual/admin uploads need an actual news-deletion queue entry.
   if(task!=='expire'&&(dryRun||state.policy.cleanup_enabled)){
    const orphans=(await db.query(`SELECT m.path FROM media_assets m WHERE m.mime_type='image/webp' AND m.created_at<now()-$1*interval '1 day'
     AND m.created_at>=(SELECT prospective_from FROM news_retention_policy WHERE id=true)
-    AND EXISTS (SELECT 1 FROM audit_log a WHERE a.entity='media_assets' AND a.action='media.upload' AND a.entity_id=m.id::text AND a.metadata->>'storageProvider'='r2' AND a.metadata->>'sourceType' IN ('import','manual') AND a.metadata->>'objectKey'=substring(m.path FROM 2))
+    AND EXISTS (SELECT 1 FROM audit_log a WHERE a.entity='media_assets' AND a.action='media.upload' AND a.entity_id=m.id::text AND a.metadata->>'storageProvider'='r2' AND a.metadata->>'sourceType'='import' AND a.metadata->>'objectKey'=substring(m.path FROM 2))
     AND NOT EXISTS (${mediaReferences('m.path',"'{}'")}) ORDER BY m.created_at LIMIT 100`,[state.policy.recovery_days])).rows;
    for(const {path}of orphans){
     if(Date.now()>deadline)break;
