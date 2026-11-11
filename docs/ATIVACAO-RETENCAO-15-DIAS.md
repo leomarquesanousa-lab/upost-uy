@@ -2,7 +2,7 @@
 
 ## Estado efetivo
 
-**Ainda não ativa em produção.** O KVM executa `2d6c56a4acc1973658652149d70fcb0633b40e8c`. A migração 012 não está publicada nem aplicada no Neon. A configuração real permanece em **48 horas**, recuperação de **7 dias** e limpeza definitiva **desativada**.
+**Ativada em produção após autorização.** Release `7adb2a0b7d8b36a48009dd91db0ed29f1416f41a`, migração 012 aplicada, **360 horas**, recuperação de **7 dias**, limpeza definitiva habilitada e cron horário retomado. Nenhuma notícia ou objeto foi excluído na ativação. Ver [RETENCAO-ATIVADA-PRODUCAO.md](RETENCAO-ATIVADA-PRODUCAO.md).
 
 A implementação local usa 360 horas (15 dias completos) e foi validada em uma restauração real do backup. Aplicar apenas a migração, mantendo a rotina antiga no servidor, seria inseguro: a rotina antiga não usa a marca prospectiva `retention_managed`. A ativação depende de publicação coordenada autorizada, não apenas de trocar um número no banco.
 
@@ -63,4 +63,4 @@ Se houver falha de publicação, manter o job do UPOST suspenso até alinhar có
 - Adicionado este plano de ativação e atualizado o documento de retenção com o estado verificado.
 - A migração 012 existente foi validada sem alteração de seu SQL.
 
-Não houve deploy, migração no Neon, ativação de limpeza, exclusão de registros/objetos reais, alteração de limites, modificação do cron ou intervenção na IA Marquesano.
+As verificações de preparação acima antecederam a autorização de publicação. A ativação coordenada foi posteriormente concluída, conforme o relatório final vinculado no início; os limites e a IA Marquesano permaneceram preservados.
